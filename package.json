@@ -1,0 +1,36 @@
+{
+  "name": "adhd-study-assistant-backend",
+  "version": "1.0.0",
+  "description": "Backend for ADHD-focused study management app with Canvas LMS integration",
+  "main": "src/server.js",
+  "type": "module",
+  "scripts": {
+    "dev": "nodemon src/server.js",
+    "start": "node src/server.js",
+    "db:generate": "prisma generate",
+    "db:migrate": "prisma migrate dev",
+    "db:studio": "prisma studio",
+    "db:seed": "node src/database/seed.js",
+    "test:canvas": "node test-canvas.js",
+    "canvas:sync": "node connect-and-sync-canvas.js"
+  },
+  "keywords": ["adhd", "study", "canvas", "lms", "pomodoro"],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "@prisma/client": "^5.7.1",
+    "axios": "^1.6.2",
+    "bcryptjs": "^2.4.3",
+    "cors": "^2.8.5",
+    "dotenv": "^16.3.1",
+    "express": "^4.18.2",
+    "jsonwebtoken": "^9.0.2",
+    "node-cron": "^3.0.3",
+    "winston": "^3.11.0"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.2",
+    "prisma": "^5.7.1"
+  }
+}
+

@@ -1,0 +1,44 @@
+# Dependencies
+node_modules/
+package-lock.json
+yarn.lock
+
+# Environment variables
+.env
+.env.local
+.env.production
+
+# Database
+*.db
+*.sqlite
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Prisma
+prisma/migrations/
+
+# Documentation files (not needed in repo)
+VIEW_DATA.md
+TEST_CANVAS.md
+SETUP_POSTGRES.md
+QUICKSTART.md
+CREATE_ENV.md
+
+# Test/helper scripts (local development only)
+test-canvas.js
+connect-and-sync-canvas.js
+check-db.js
+
