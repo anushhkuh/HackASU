@@ -1,0 +1,133 @@
+.contribution-calendar {
+  background: var(--bg-secondary);
+  border-radius: var(--radius-lg);
+  padding: var(--spacing-lg);
+  box-shadow: var(--shadow-md);
+  border: 2px solid var(--bg-tertiary);
+}
+
+.calendar-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--spacing-md);
+}
+
+.calendar-header h3 {
+  margin: 0;
+  font-size: 1.2rem;
+  color: var(--text-primary);
+}
+
+.calendar-legend {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+}
+
+.legend-squares {
+  display: flex;
+  gap: 2px;
+}
+
+.legend-square {
+  width: 12px;
+  height: 12px;
+  border-radius: 2px;
+  background: var(--bg-tertiary);
+}
+
+.legend-square.level-0 {
+  background: var(--bg-tertiary);
+}
+
+.legend-square.level-1 {
+  background: #9be9a8;
+}
+
+.legend-square.level-2 {
+  background: #40c463;
+}
+
+.legend-square.level-3 {
+  background: #30a14e;
+}
+
+.legend-square.level-4 {
+  background: #216e39;
+}
+
+.calendar-container {
+  position: relative;
+  overflow-x: auto;
+  padding-top: var(--spacing-md);
+}
+
+.calendar-months {
+  position: relative;
+  height: 20px;
+  margin-bottom: var(--spacing-xs);
+}
+
+.month-label {
+  position: absolute;
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  white-space: nowrap;
+}
+
+.calendar-grid {
+  display: flex;
+  gap: 3px;
+  padding-bottom: var(--spacing-xs);
+}
+
+.calendar-week {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.calendar-day {
+  width: 12px;
+  height: 12px;
+  border-radius: 2px;
+  background: var(--bg-tertiary);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  position: relative;
+}
+
+.calendar-day:hover {
+  transform: scale(1.2);
+  z-index: 10;
+  box-shadow: 0 0 0 2px var(--primary-orange);
+}
+
+.calendar-day.level-0 {
+  background: var(--bg-tertiary);
+}
+
+.calendar-day.level-1 {
+  background: #9be9a8;
+}
+
+.calendar-day.level-2 {
+  background: #40c463;
+}
+
+.calendar-day.level-3 {
+  background: #30a14e;
+}
+
+.calendar-day.level-4 {
+  background: #216e39;
+}
+
+.calendar-day.today {
+  border: 2px solid var(--primary-orange);
+  box-shadow: 0 0 4px rgba(255, 140, 0, 0.5);
+}
+

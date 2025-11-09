@@ -120,12 +120,19 @@ router.get('/me', authenticate, async (req, res, next) => {
         name: true,
         canvasUserId: true,
         canvasInstanceUrl: true,
-        hasCanvasConnection: true,
+        canvasToken: true,
         createdAt: true,
       },
     });
 
-    res.json({ user });
+    // Add computed field
+    const userWithConnection = {
+      ...user,
+      hasCanvasConnection: !!user.canvasToken,
+      canvasToken: undefined, // Don't send token to frontend
+    };
+
+    res.json({ user: userWithConnection });
   } catch (error) {
     next(error);
   }
@@ -177,6 +184,111 @@ router.post('/canvas/callback', authenticate, async (req, res, next) => {
       canvasUserId: canvasUser.id,
     });
   } catch (error) {
+    next(error);
+  }
+});
+
+// Quick Connect Canvas using token from .env (Easiest method)
+router.post('/canvas/quick-connect', authenticate, async (req, res, next) => {
+  try {
+    const token = process.env.CANVAS_TEST_TOKEN;
+    const canvasBaseUrl = process.env.CANVAS_BASE_URL;
+
+    if (!token) {
+      return res.status(400).json({ 
+        error: 'CANVAS_TEST_TOKEN is not set in .env file. Please add your Canvas token to .env' 
+      });
+    }
+
+    if (!canvasBaseUrl) {
+      return res.status(400).json({ 
+        error: 'CANVAS_BASE_URL is not set in .env file' 
+      });
+    }
+
+    // Test the token by getting user info
+    const canvasAPI = new CanvasAPI(token, canvasBaseUrl);
+    const canvasUser = await canvasAPI.getCurrentUser();
+
+    // Update user with Canvas credentials
+    const user = await prisma.user.update({
+      where: { id: req.user.id },
+      data: {
+        canvasToken: token,
+        canvasUserId: canvasUser.id.toString(),
+        canvasInstanceUrl: canvasBaseUrl.replace(/\/$/, ''),
+      },
+      select: {
+        id: true,
+        email: true,
+        canvasUserId: true,
+      },
+    });
+
+    // Log activity
+    await logActivity(user.id, 'canvas_connected', 'user', user.id);
+
+    res.json({
+      message: 'Canvas connected successfully using token from .env',
+      canvasUserId: canvasUser.id,
+      canvasUserName: canvasUser.name,
+    });
+  } catch (error) {
+    if (error.message.includes('Canvas API error')) {
+      return res.status(401).json({ 
+        error: 'Invalid Canvas token in .env file. Please check CANVAS_TEST_TOKEN and CANVAS_BASE_URL' 
+      });
+    }
+    next(error);
+  }
+});
+
+// Connect Canvas with Personal Access Token (Alternative to OAuth)
+router.post('/canvas/connect-token', authenticate, async (req, res, next) => {
+  try {
+    const { token, baseUrl } = req.body;
+
+    if (!token) {
+      return res.status(400).json({ error: 'Canvas access token is required' });
+    }
+
+    const canvasBaseUrl = baseUrl || process.env.CANVAS_BASE_URL;
+    if (!canvasBaseUrl) {
+      return res.status(400).json({ error: 'Canvas base URL is required' });
+    }
+
+    // Test the token by getting user info
+    const canvasAPI = new CanvasAPI(token, canvasBaseUrl);
+    const canvasUser = await canvasAPI.getCurrentUser();
+
+    // Update user with Canvas credentials
+    const user = await prisma.user.update({
+      where: { id: req.user.id },
+      data: {
+        canvasToken: token,
+        canvasUserId: canvasUser.id.toString(),
+        canvasInstanceUrl: canvasBaseUrl.replace(/\/$/, ''),
+      },
+      select: {
+        id: true,
+        email: true,
+        canvasUserId: true,
+      },
+    });
+
+    // Log activity
+    await logActivity(user.id, 'canvas_connected', 'user', user.id);
+
+    res.json({
+      message: 'Canvas connected successfully',
+      canvasUserId: canvasUser.id,
+    });
+  } catch (error) {
+    if (error.message.includes('Canvas API error')) {
+      return res.status(401).json({ 
+        error: 'Invalid Canvas token or URL. Please check your token and try again.' 
+      });
+    }
     next(error);
   }
 });

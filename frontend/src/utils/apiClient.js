@@ -87,6 +87,11 @@ export const authAPI = {
   register: (email, password, name) => apiClient.post('/api/auth/register', { email, password, name }),
   login: (email, password) => apiClient.post('/api/auth/login', { email, password }),
   getMe: () => apiClient.get('/api/auth/me'),
+  getCanvasAuthUrl: () => apiClient.get('/api/auth/canvas/authorize'),
+  connectCanvas: (code) => apiClient.post('/api/auth/canvas/callback', { code }),
+  quickConnectCanvas: () => apiClient.post('/api/auth/canvas/quick-connect'),
+  connectCanvasWithToken: (token, baseUrl) => apiClient.post('/api/auth/canvas/connect-token', { token, baseUrl }),
+  disconnectCanvas: () => apiClient.post('/api/auth/canvas/disconnect'),
 };
 
 export default apiClient;

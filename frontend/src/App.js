@@ -18,11 +18,18 @@ function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [dashboardRefreshKey, setDashboardRefreshKey] = useState(0);
 
   useEffect(() => {
     checkAuth();
-    loadCourses();
+    handleCanvasCallback();
   }, []);
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      loadCourses();
+    }
+  }, [isAuthenticated, user]);
 
   const checkAuth = async () => {
     const token = localStorage.getItem('authToken');
@@ -41,19 +48,64 @@ function App() {
     setLoading(false);
   };
 
+  const handleCanvasCallback = async () => {
+    // Check if we're returning from Canvas OAuth
+    const urlParams = new URLSearchParams(window.location.search);
+    const code = urlParams.get('code');
+    const state = urlParams.get('state');
+
+    if (code && state) {
+      try {
+        const token = localStorage.getItem('authToken');
+        if (!token) {
+          console.error('No auth token found');
+          return;
+        }
+
+        // Complete Canvas connection
+        try {
+          const data = await authAPI.connectCanvas(code);
+          alert('Canvas connected successfully!');
+          
+          // Refresh user data
+          const userResponse = await authAPI.getMe();
+          setUser(userResponse.user);
+          
+          // Load courses
+          await loadCourses();
+          
+          // Clean up URL
+          window.history.replaceState({}, document.title, window.location.pathname);
+        } catch (error) {
+          alert(`Failed to connect Canvas: ${error.message || 'Unknown error'}`);
+        }
+      } catch (error) {
+        console.error('Canvas callback error:', error);
+        alert('Failed to connect Canvas. Please try again.');
+      }
+    }
+  };
+
   const loadCourses = async () => {
     try {
-      const response = await fetch('/api/canvas/courses', {
+      const token = localStorage.getItem('authToken');
+      if (!token) return;
+
+      const response = await fetch('http://localhost:3000/api/canvas/courses', {
         headers: {
-          'Authorization': `Bearer ${localStorage.getItem('authToken')}`,
+          'Authorization': `Bearer ${token}`,
         },
       });
       if (response.ok) {
         const data = await response.json();
         setCourses(data.courses || []);
+      } else if (response.status === 400) {
+        // Canvas not connected - this is OK
+        setCourses([]);
       }
     } catch (error) {
       console.error('Failed to load courses:', error);
+      setCourses([]);
     }
   };
 
@@ -104,6 +156,14 @@ function App() {
         onCourseSelect={setSelectedCourse}
         user={user}
         onLogout={handleLogout}
+        onCanvasConnect={async () => {
+          // Refresh user data after Canvas connection
+          const userResponse = await authAPI.getMe();
+          setUser(userResponse.user);
+          await loadCourses();
+          // Trigger Dashboard refresh
+          setDashboardRefreshKey(prev => prev + 1);
+        }}
       />
       <div className="main-layout">
         <Sidebar 
@@ -112,7 +172,7 @@ function App() {
         />
         <main className="main-content">
           {currentPage === 'dashboard' && (
-            <Dashboard selectedCourse={selectedCourse} />
+            <Dashboard key={dashboardRefreshKey} selectedCourse={selectedCourse} />
           )}
           {currentPage === 'notes' && (
             <Notes selectedCourse={selectedCourse} />

@@ -53,7 +53,7 @@ const Login = ({ onLogin, onRegister }) => {
     <div className="login-container">
       <div className="login-card">
         <div className="login-header">
-          <h1 className="login-logo">Focus Pocus</h1>
+          <h1 className="login-logo">Let's lock-in!</h1>
           <p className="login-subtitle">Your ADHD Study Companion</p>
         </div>
         

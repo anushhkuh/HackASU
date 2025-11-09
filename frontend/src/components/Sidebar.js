@@ -13,7 +13,7 @@ const Sidebar = ({ currentPage, onPageChange }) => {
   return (
     <aside className="sidebar">
       <div className="sidebar-header">
-        <h2 className="sidebar-logo">Focus Pocus</h2>
+        <h2 className="sidebar-logo">Let's lock-in!</h2>
         <p className="sidebar-tagline">Your ADHD Study Companion</p>
       </div>
       <nav className="sidebar-nav">

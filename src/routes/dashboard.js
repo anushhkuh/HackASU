@@ -10,13 +10,12 @@ router.get('/', authenticate, async (req, res, next) => {
     const now = new Date();
     const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
 
-    // Upcoming assignments (next 7 days)
+    // ALL upcoming assignments (no time limit - sorted by due date)
     const upcomingAssignments = await prisma.assignment.findMany({
       where: {
         userId: req.user.id,
         dueDate: {
           gte: today,
-          lte: new Date(today.getTime() + 7 * 24 * 60 * 60 * 1000),
         },
         status: {
           not: 'completed',
@@ -34,7 +33,6 @@ router.get('/', authenticate, async (req, res, next) => {
       orderBy: {
         dueDate: 'asc',
       },
-      take: 10,
     });
 
     // Overdue assignments
@@ -136,8 +134,8 @@ router.get('/', authenticate, async (req, res, next) => {
       where: { userId: req.user.id },
     });
 
-    // Recent badges
-    const recentBadges = await prisma.userBadge.findMany({
+    // All badges (earned and available)
+    const userBadges = await prisma.userBadge.findMany({
       where: { userId: req.user.id },
       include: {
         badge: true,
@@ -145,8 +143,20 @@ router.get('/', authenticate, async (req, res, next) => {
       orderBy: {
         earnedAt: 'desc',
       },
-      take: 3,
     });
+
+    const allBadges = await prisma.badge.findMany({
+      orderBy: {
+        name: 'asc',
+      },
+    });
+
+    const earnedBadgeIds = new Set(userBadges.map(ub => ub.badgeId));
+    const badges = allBadges.map(badge => ({
+      ...badge,
+      earned: earnedBadgeIds.has(badge.id),
+      earnedAt: userBadges.find(ub => ub.badgeId === badge.id)?.earnedAt || null,
+    }));
 
     // Completion stats
     const totalAssignments = await prisma.assignment.count({
@@ -174,6 +184,37 @@ router.get('/', authenticate, async (req, res, next) => {
       },
     });
 
+    // Activity calendar data (last 365 days for GitHub-style graph)
+    const oneYearAgo = new Date(today.getTime() - 365 * 24 * 60 * 60 * 1000);
+    const activityLogs = await prisma.activityLog.findMany({
+      where: {
+        userId: req.user.id,
+        timestamp: {
+          gte: oneYearAgo,
+        },
+        action: {
+          in: ['session_completed', 'assignment_completed', 'note_created'],
+        },
+      },
+      select: {
+        timestamp: true,
+        action: true,
+      },
+      orderBy: {
+        timestamp: 'asc',
+      },
+    });
+
+    // Group activity by date
+    const activityByDate = {};
+    activityLogs.forEach(log => {
+      const dateKey = new Date(log.timestamp).toISOString().split('T')[0];
+      if (!activityByDate[dateKey]) {
+        activityByDate[dateKey] = 0;
+      }
+      activityByDate[dateKey]++;
+    });
+
     res.json({
       upcomingAssignments,
       overdueAssignments,
@@ -184,7 +225,9 @@ router.get('/', authenticate, async (req, res, next) => {
       },
       pendingReminders,
       streaks,
-      recentBadges: recentBadges.map(ub => ub.badge),
+      badges,
+      earnedBadgesCount: userBadges.length,
+      totalBadgesCount: allBadges.length,
       stats: {
         totalAssignments,
         completedAssignments,
@@ -193,6 +236,7 @@ router.get('/', authenticate, async (req, res, next) => {
           : 0,
       },
       activitySummary,
+      activityCalendar: activityByDate, // For GitHub-style contribution graph
     });
   } catch (error) {
     next(error);

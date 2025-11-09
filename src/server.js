@@ -11,6 +11,8 @@ import reminderRoutes from './routes/reminders.js';
 import dashboardRoutes from './routes/dashboard.js';
 import canvasRoutes from './routes/canvas.js';
 import recommendationRoutes from './routes/recommendations.js';
+import geminiRoutes from './routes/gemini.js';
+import syncRoutes from './routes/sync.js';
 import { errorHandler } from './middleware/errorHandler.js';
 import { logger } from './utils/logger.js';
 
@@ -48,6 +50,8 @@ app.use('/api/reminders', reminderRoutes);
 app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/canvas', canvasRoutes);
 app.use('/api/recommendations', recommendationRoutes);
+app.use('/api/gemini', geminiRoutes);
+app.use('/api/sync', syncRoutes);
 
 // Error handling
 app.use(errorHandler);

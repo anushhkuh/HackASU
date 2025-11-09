@@ -49,14 +49,16 @@ export class CanvasAPI {
   /**
    * Get assignments for a specific course
    */
-  async getCourseAssignments(courseId) {
+  async getCourseAssignments(courseId, bucket = null) {
     try {
-      const response = await this.client.get(`/courses/${courseId}/assignments`, {
-        params: {
-          include: ['submission', 'overrides'],
-          bucket: 'upcoming', // upcoming, past, undated
-        },
-      });
+      const params = {
+        include: ['submission', 'overrides'],
+      };
+      // Only filter by bucket if specified (null = get all assignments)
+      if (bucket) {
+        params.bucket = bucket; // upcoming, past, undated
+      }
+      const response = await this.client.get(`/courses/${courseId}/assignments`, { params });
       return response.data;
     } catch (error) {
       throw new Error(`Canvas API error: ${error.response?.data?.message || error.message}`);
@@ -137,33 +139,128 @@ export class CanvasAPI {
       throw new Error(`Canvas API error: ${error.response?.data?.message || error.message}`);
     }
   }
+
+  /**
+   * Get grades for a specific course
+   */
+  async getCourseGrades(courseId) {
+    try {
+      const response = await this.client.get(`/courses/${courseId}/students/submissions`, {
+        params: {
+          student_ids: ['self'],
+          include: ['assignment', 'submission_comments'],
+        },
+      });
+      return response.data;
+    } catch (error) {
+      throw new Error(`Canvas API error: ${error.response?.data?.message || error.message}`);
+    }
+  }
+
+  /**
+   * Get all grades across all courses
+   */
+  async getAllGrades() {
+    try {
+      const courses = await this.getCourses();
+      const allGrades = [];
+
+      for (const course of courses) {
+        try {
+          const grades = await this.getCourseGrades(course.id);
+          grades.forEach(grade => {
+            allGrades.push({
+              ...grade,
+              courseId: course.id,
+              courseName: course.name,
+              assignmentName: grade.assignment?.name || 'N/A',
+            });
+          });
+        } catch (error) {
+          console.error(`Error fetching grades for course ${course.id}:`, error.message);
+        }
+      }
+
+      return allGrades;
+    } catch (error) {
+      throw new Error(`Canvas API error: ${error.response?.data?.message || error.message}`);
+    }
+  }
+
+  /**
+   * Get course schedule/calendar events
+   */
+  async getCourseSchedule(courseIds = []) {
+    try {
+      const response = await this.client.get('/calendar_events', {
+        params: {
+          context_codes: courseIds.map(id => `course_${id}`),
+          type: 'event',
+        },
+      });
+      return response.data;
+    } catch (error) {
+      throw new Error(`Canvas API error: ${error.response?.data?.message || error.message}`);
+    }
+  }
 }
 
 /**
  * OAuth2 helper functions for Canvas
  */
 export const getCanvasAuthUrl = (state) => {
-  const baseUrl = process.env.CANVAS_BASE_URL.replace(/\/$/, '');
+  const baseUrl = process.env.CANVAS_BASE_URL?.replace(/\/$/, '');
   const clientId = process.env.CANVAS_CLIENT_ID;
-  const redirectUri = encodeURIComponent(process.env.CANVAS_REDIRECT_URI);
+  const redirectUri = process.env.CANVAS_REDIRECT_URI;
 
-  return `${baseUrl}/login/oauth2/auth?client_id=${clientId}&response_type=code&redirect_uri=${redirectUri}&state=${state}`;
+  if (!baseUrl) {
+    throw new Error('CANVAS_BASE_URL is not set in environment variables');
+  }
+  if (!clientId) {
+    throw new Error('CANVAS_CLIENT_ID is not set in environment variables. Please create a Canvas OAuth app and add the Client ID to your .env file. See SETUP_CANVAS_OAUTH.md for instructions.');
+  }
+  if (!redirectUri) {
+    throw new Error('CANVAS_REDIRECT_URI is not set in environment variables');
+  }
+
+  return `${baseUrl}/login/oauth2/auth?client_id=${clientId}&response_type=code&redirect_uri=${encodeURIComponent(redirectUri)}&state=${state}`;
 };
 
 export const exchangeCanvasCode = async (code) => {
   try {
-    const baseUrl = process.env.CANVAS_BASE_URL.replace(/\/$/, '');
+    const baseUrl = process.env.CANVAS_BASE_URL?.replace(/\/$/, '');
+    const clientId = process.env.CANVAS_CLIENT_ID;
+    const clientSecret = process.env.CANVAS_CLIENT_SECRET;
+    const redirectUri = process.env.CANVAS_REDIRECT_URI;
+
+    if (!baseUrl) {
+      throw new Error('CANVAS_BASE_URL is not set in environment variables');
+    }
+    if (!clientId) {
+      throw new Error('CANVAS_CLIENT_ID is not set in environment variables');
+    }
+    if (!clientSecret) {
+      throw new Error('CANVAS_CLIENT_SECRET is not set in environment variables');
+    }
+    if (!redirectUri) {
+      throw new Error('CANVAS_REDIRECT_URI is not set in environment variables');
+    }
+
     const response = await axios.post(`${baseUrl}/login/oauth2/token`, {
       grant_type: 'authorization_code',
-      client_id: process.env.CANVAS_CLIENT_ID,
-      client_secret: process.env.CANVAS_CLIENT_SECRET,
-      redirect_uri: process.env.CANVAS_REDIRECT_URI,
+      client_id: clientId,
+      client_secret: clientSecret,
+      redirect_uri: redirectUri,
       code: code,
     });
 
     return response.data;
   } catch (error) {
-    throw new Error(`Canvas OAuth error: ${error.response?.data?.error_description || error.message}`);
+    const errorMsg = error.response?.data?.error_description || error.message;
+    if (errorMsg.includes('invalid_client') || errorMsg.includes('unknown client')) {
+      throw new Error(`Canvas OAuth error: Invalid client. Please check your CANVAS_CLIENT_ID and CANVAS_CLIENT_SECRET in .env file. See SETUP_CANVAS_OAUTH.md for setup instructions.`);
+    }
+    throw new Error(`Canvas OAuth error: ${errorMsg}`);
   }
 };
 
