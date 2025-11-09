@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Focus & Posture Monitor</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="container text-center mt-4">
+    <h1>📊 Focus & Posture Monitor</h1>
+    <div class="video-wrapper mt-3">
+      <video id="webcam" autoplay muted playsinline></video>
+      <canvas id="output_canvas" class="position-absolute top-0 start-0"></canvas>
+    </div>
+    <div id="status" class="mt-3 text-secondary">Initializing...</div>
+  </div>
+  <script src="script.js"></script>
+</body>
+</html>
