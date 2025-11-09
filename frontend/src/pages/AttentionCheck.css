@@ -183,3 +183,30 @@
   font-size: 1.1rem;
 }
 
+.posture-feedback-section {
+  margin-top: var(--spacing-lg);
+  padding: var(--spacing-md);
+  background: rgba(243, 156, 18, 0.1);
+  border-left: 4px solid var(--warning);
+  border-radius: var(--radius-md);
+}
+
+.posture-feedback-section h3 {
+  font-family: var(--font-heading);
+  font-size: 1.1rem;
+  margin-bottom: var(--spacing-sm);
+  color: var(--text-primary);
+}
+
+.posture-feedback-section ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.posture-feedback-section li {
+  padding: var(--spacing-xs) 0;
+  color: var(--text-primary);
+  font-weight: 500;
+}
+

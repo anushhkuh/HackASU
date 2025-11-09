@@ -3,13 +3,16 @@ import './AttentionCheck.css';
 
 const AttentionCheck = () => {
   const [isActive, setIsActive] = useState(false);
-  const [isFocused, setIsFocused] = useState(true);
+  const [focusStatus, setFocusStatus] = useState('idle'); // idle, concentrated, distracted, writing notes
+  const [postureFeedback, setPostureFeedback] = useState([]);
+  const [backendStatus, setBackendStatus] = useState('disconnected'); // disconnected, connected, error
   const [checkCount, setCheckCount] = useState(0);
   const [lastCheckTime, setLastCheckTime] = useState(null);
-  const [status, setStatus] = useState('idle'); // idle, checking, focused, distracted
   const videoRef = useRef(null);
+  const canvasRef = useRef(null);
   const streamRef = useRef(null);
-  const checkIntervalRef = useRef(null);
+  const animationFrameRef = useRef(null);
+  const API_URL = 'http://localhost:5000/pose';
 
   useEffect(() => {
     // Request notification permission
@@ -19,8 +22,8 @@ const AttentionCheck = () => {
 
     return () => {
       stopCamera();
-      if (checkIntervalRef.current) {
-        clearInterval(checkIntervalRef.current);
+      if (animationFrameRef.current) {
+        cancelAnimationFrame(animationFrameRef.current);
       }
     };
   }, []);
@@ -28,15 +31,23 @@ const AttentionCheck = () => {
   const startCamera = async () => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: 'user' },
+        video: { width: 640, height: 480, facingMode: 'user' },
         audio: false,
       });
       streamRef.current = stream;
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
+        videoRef.current.onloadedmetadata = () => {
+          // Set canvas size to match video
+          if (canvasRef.current && videoRef.current) {
+            canvasRef.current.width = videoRef.current.videoWidth;
+            canvasRef.current.height = videoRef.current.videoHeight;
+          }
+          setIsActive(true);
+          setBackendStatus('connected');
+          startPoseDetection();
+        };
       }
-      setIsActive(true);
-      startAttentionChecks();
     } catch (error) {
       console.error('Error accessing camera:', error);
       alert('Could not access camera. Please check permissions.');
@@ -51,87 +62,95 @@ const AttentionCheck = () => {
     if (videoRef.current) {
       videoRef.current.srcObject = null;
     }
+    if (animationFrameRef.current) {
+      cancelAnimationFrame(animationFrameRef.current);
+    }
     setIsActive(false);
-    if (checkIntervalRef.current) {
-      clearInterval(checkIntervalRef.current);
-    }
+    setBackendStatus('disconnected');
+    setFocusStatus('idle');
+    setPostureFeedback([]);
   };
 
-  const startAttentionChecks = () => {
-    // Check every 30 seconds
-    checkIntervalRef.current = setInterval(() => {
-      performAttentionCheck();
-    }, 30000);
+  const sendFrameToBackend = async () => {
+    if (!videoRef.current || !canvasRef.current) return null;
 
-    // Initial check after 30 seconds
-    setTimeout(() => {
-      performAttentionCheck();
-    }, 30000);
-  };
+    try {
+      // Create a temporary canvas to capture the frame
+      const tempCanvas = document.createElement('canvas');
+      tempCanvas.width = videoRef.current.videoWidth;
+      tempCanvas.height = videoRef.current.videoHeight;
+      const tempCtx = tempCanvas.getContext('2d');
+      tempCtx.drawImage(videoRef.current, 0, 0);
 
-  const performAttentionCheck = () => {
-    setStatus('checking');
-    setCheckCount(prev => prev + 1);
-    setLastCheckTime(new Date());
+      // Convert to base64
+      const imageData = tempCanvas.toDataURL('image/jpeg', 0.8);
 
-    // Check if user is focused (tab is active)
-    if (document.hidden) {
-      setIsFocused(false);
-      setStatus('distracted');
-      showNotification('Attention Check', 'You seem distracted. Time to refocus!');
-    } else {
-      setIsFocused(true);
-      setStatus('focused');
-      
-      // Show attention check prompt
-      const confirmed = window.confirm(
-        '👀 Attention Check!\n\nAre you still focused on your work?\n\nClick OK if yes, Cancel if you need a break.'
-      );
-      
-      if (confirmed) {
-        setStatus('focused');
-        showNotification('Great!', 'Keep up the good focus!');
-      } else {
-        setStatus('distracted');
-        showNotification('Break Time', 'Consider taking a short break to recharge.');
-      }
-    }
-
-    // Reset status after 3 seconds
-    setTimeout(() => {
-      setStatus('idle');
-    }, 3000);
-  };
-
-  const showNotification = (title, body) => {
-    if ('Notification' in window && Notification.permission === 'granted') {
-      new Notification(title, {
-        body,
-        icon: '/logo192.png',
+      // Send to backend
+      const response = await fetch(API_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ image: imageData }),
       });
+
+      if (!response.ok) {
+        throw new Error(`Backend returned ${response.status}`);
+      }
+
+      const data = await response.json();
+      return data;
+    } catch (error) {
+      console.error('Error sending frame to backend:', error);
+      setBackendStatus('error');
+      return null;
     }
   };
 
-  const handleVisibilityChange = () => {
-    if (document.hidden && isActive) {
-      setIsFocused(false);
-      if (status !== 'checking') {
-        setStatus('distracted');
-      }
-    } else {
-      setIsFocused(true);
-      if (status === 'distracted') {
-        setStatus('idle');
-      }
-    }
+  const drawPoses = (poses) => {
+    if (!canvasRef.current) return;
+
+    const ctx = canvasRef.current.getContext('2d');
+    ctx.fillStyle = '#00FF00';
+
+    poses.forEach(pose => {
+      pose.forEach(point => {
+        if (point && point.length >= 2) {
+          ctx.beginPath();
+          ctx.arc(point[0], point[1], 5, 0, 2 * Math.PI);
+          ctx.fill();
+        }
+      });
+    });
   };
 
-  useEffect(() => {
-    document.addEventListener('visibilitychange', handleVisibilityChange);
-    return () => {
-      document.removeEventListener('visibilitychange', handleVisibilityChange);
+  const startPoseDetection = async () => {
+    const processFrame = async () => {
+      if (!isActive) return;
+
+      const data = await sendFrameToBackend();
+
+      if (canvasRef.current && videoRef.current) {
+        const ctx = canvasRef.current.getContext('2d');
+        ctx.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
+        ctx.drawImage(videoRef.current, 0, 0, canvasRef.current.width, canvasRef.current.height);
+
+        if (data && data.poses && data.poses.length > 0) {
+          drawPoses(data.poses);
+          setFocusStatus(data.focus_status || 'Unknown');
+          setPostureFeedback(data.posture_feedback || []);
+          setBackendStatus('connected');
+          setCheckCount(prev => prev + 1);
+          setLastCheckTime(new Date());
+        } else if (data) {
+          setFocusStatus('NO PERSON DETECTED');
+          setPostureFeedback([]);
+        }
+      }
+
+      animationFrameRef.current = requestAnimationFrame(processFrame);
     };
-  }, [isActive, status]);
+
+    processFrame();
+  };
 
   return (
     <div className="attention-check-page">
@@ -144,13 +163,14 @@ const AttentionCheck = () => {
         <div className="attention-info-card">
           <h3>How It Works</h3>
           <ul>
-            <li>📷 Camera access for face detection (optional)</li>
-            <li>⏰ Periodic attention checks every 30 seconds</li>
-            <li>👀 Tracks if you're focused or distracted</li>
-            <li>🔔 Notifications to help you stay on track</li>
+            <li>📷 Real-time pose detection using MediaPipe</li>
+            <li>🧠 AI-powered focus tracking (concentrated, distracted, taking notes)</li>
+            <li>🧍 Posture analysis with feedback</li>
+            <li>⚡ Live processing using Flask backend</li>
           </ul>
           <p className="privacy-note">
-            ⚠️ Privacy: All processing happens locally in your browser. No data is sent to servers.
+            ⚠️ Backend Required: Make sure the Flask server is running on port 5000.
+            Run: <code>python server/backend/app.py</code>
           </p>
         </div>
 
@@ -175,21 +195,16 @@ const AttentionCheck = () => {
                 muted
                 playsInline
                 className="attention-video"
+                style={{ display: 'none' }}
+              />
+              <canvas
+                ref={canvasRef}
+                className="attention-video"
               />
               <div className="video-overlay">
-                {status === 'checking' && (
-                  <div className="status-indicator checking">
-                    <span>🔍 Checking attention...</span>
-                  </div>
-                )}
-                {status === 'focused' && (
-                  <div className="status-indicator focused">
-                    <span>✅ Focused!</span>
-                  </div>
-                )}
-                {status === 'distracted' && (
+                {backendStatus === 'error' && (
                   <div className="status-indicator distracted">
-                    <span>⚠️ Distracted</span>
+                    <span>❌ Backend Connection Error</span>
                   </div>
                 )}
               </div>
@@ -197,24 +212,45 @@ const AttentionCheck = () => {
 
             <div className="attention-stats">
               <div className="stat-item">
-                <span className="stat-label">Status:</span>
-                <span className={`stat-value ${isFocused ? 'focused' : 'distracted'}`}>
-                  {isFocused ? '👀 Focused' : '😴 Distracted'}
+                <span className="stat-label">Focus Status:</span>
+                <span className={`stat-value ${
+                  focusStatus.includes('CONCENTRATED') ? 'focused' :
+                  focusStatus.includes('DISTRACTED') ? 'distracted' : ''
+                }`}>
+                  {focusStatus === 'idle' ? '⏸️ Idle' : focusStatus}
                 </span>
               </div>
               <div className="stat-item">
-                <span className="stat-label">Checks Performed:</span>
+                <span className="stat-label">Backend:</span>
+                <span className={`stat-value ${backendStatus === 'connected' ? 'focused' : 'distracted'}`}>
+                  {backendStatus === 'connected' ? '✅ Connected' :
+                   backendStatus === 'error' ? '❌ Error' : '⏹️ Disconnected'}
+                </span>
+              </div>
+              <div className="stat-item">
+                <span className="stat-label">Frames Processed:</span>
                 <span className="stat-value">{checkCount}</span>
               </div>
               {lastCheckTime && (
                 <div className="stat-item">
-                  <span className="stat-label">Last Check:</span>
+                  <span className="stat-label">Last Update:</span>
                   <span className="stat-value">
                     {lastCheckTime.toLocaleTimeString()}
                   </span>
                 </div>
               )}
             </div>
+
+            {postureFeedback.length > 0 && (
+              <div className="posture-feedback-section">
+                <h3>⚠️ Posture Feedback:</h3>
+                <ul>
+                  {postureFeedback.map((feedback, index) => (
+                    <li key={index}>{feedback}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
           </div>
         )}
 
