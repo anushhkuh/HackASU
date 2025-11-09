@@ -42,4 +42,7 @@ def estimate_pose():
         return jsonify({"error": str(e)}), 500
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5000)
+    print("🚀 Starting Flask backend on http://0.0.0.0:5000")
+    print("📡 CORS enabled for all origins")
+    print("✅ Ready to receive pose detection requests!")
+    app.run(host="0.0.0.0", port=5000, debug=False)
