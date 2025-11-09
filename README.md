@@ -1,4 +1,4 @@
-# Focus Pocus - ADHD Study Management App
+# Lock In (ADHD) - ADHD Study Management App
 
 A comprehensive study management application for students with ADHD, featuring Canvas LMS integration, Pomodoro timer, gamification, and personalized study tools.
 
