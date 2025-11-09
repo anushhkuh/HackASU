@@ -12,7 +12,8 @@ const AttentionCheck = () => {
   const canvasRef = useRef(null);
   const streamRef = useRef(null);
   const animationFrameRef = useRef(null);
-  const API_URL = 'http://localhost:5000/pose';
+  const isActiveRef = useRef(false);
+  const API_URL = 'http://127.0.0.1:5000/pose';
 
   useEffect(() => {
     // Request notification permission
@@ -42,9 +43,12 @@ const AttentionCheck = () => {
           if (canvasRef.current && videoRef.current) {
             canvasRef.current.width = videoRef.current.videoWidth;
             canvasRef.current.height = videoRef.current.videoHeight;
+            console.log('Canvas size set to:', canvasRef.current.width, 'x', canvasRef.current.height);
           }
+          isActiveRef.current = true;
           setIsActive(true);
-          setBackendStatus('connected');
+          setBackendStatus('connecting');
+          console.log('Starting pose detection...');
           startPoseDetection();
         };
       }
@@ -55,6 +59,7 @@ const AttentionCheck = () => {
   };
 
   const stopCamera = () => {
+    isActiveRef.current = false;
     if (streamRef.current) {
       streamRef.current.getTracks().forEach(track => track.stop());
       streamRef.current = null;
@@ -64,6 +69,7 @@ const AttentionCheck = () => {
     }
     if (animationFrameRef.current) {
       cancelAnimationFrame(animationFrameRef.current);
+      animationFrameRef.current = null;
     }
     setIsActive(false);
     setBackendStatus('disconnected');
@@ -72,7 +78,10 @@ const AttentionCheck = () => {
   };
 
   const sendFrameToBackend = async () => {
-    if (!videoRef.current || !canvasRef.current) return null;
+    if (!videoRef.current || !canvasRef.current) {
+      console.warn('Video or canvas ref not available');
+      return null;
+    }
 
     try {
       // Create a temporary canvas to capture the frame
@@ -93,13 +102,18 @@ const AttentionCheck = () => {
       });
 
       if (!response.ok) {
-        throw new Error(`Backend returned ${response.status}`);
+        console.error(`Backend returned status ${response.status}`);
+        setBackendStatus('error');
+        return null;
       }
 
       const data = await response.json();
       return data;
     } catch (error) {
-      console.error('Error sending frame to backend:', error);
+      // Only log error once every 30 frames to avoid console spam
+      if (Math.random() < 0.03) {
+        console.error('Backend connection error:', error.message);
+      }
       setBackendStatus('error');
       return null;
     }
@@ -123,15 +137,22 @@ const AttentionCheck = () => {
   };
 
   const startPoseDetection = async () => {
+    let frameCount = 0;
+
     const processFrame = async () => {
-      if (!isActive) return;
+      if (!isActiveRef.current) {
+        console.log('Stopping pose detection - isActive is false');
+        return;
+      }
 
-      const data = await sendFrameToBackend();
-
+      // Always draw the video to canvas first
       if (canvasRef.current && videoRef.current) {
         const ctx = canvasRef.current.getContext('2d');
         ctx.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
         ctx.drawImage(videoRef.current, 0, 0, canvasRef.current.width, canvasRef.current.height);
+
+        // Send frame to backend every frame (can be throttled if needed)
+        const data = await sendFrameToBackend();
 
         if (data && data.poses && data.poses.length > 0) {
           drawPoses(data.poses);
@@ -140,15 +161,24 @@ const AttentionCheck = () => {
           setBackendStatus('connected');
           setCheckCount(prev => prev + 1);
           setLastCheckTime(new Date());
+
+          if (frameCount % 30 === 0) {
+            console.log('Frame processed:', data.focus_status);
+          }
+        } else if (data && data.error) {
+          console.error('Backend error:', data.error);
+          setFocusStatus('Backend Error');
         } else if (data) {
           setFocusStatus('NO PERSON DETECTED');
           setPostureFeedback([]);
         }
       }
 
+      frameCount++;
       animationFrameRef.current = requestAnimationFrame(processFrame);
     };
 
+    console.log('First frame processing starting...');
     processFrame();
   };
 
