@@ -1,0 +1,108 @@
+.cheatsheets-page {
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+.cheatsheets-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--spacing-lg);
+}
+
+.cheatsheets-header h1 {
+  font-family: var(--font-heading);
+  font-size: 2rem;
+  color: var(--text-primary);
+}
+
+.cheatsheets-layout {
+  display: grid;
+  grid-template-columns: 300px 1fr;
+  gap: var(--spacing-lg);
+  height: calc(100vh - 200px);
+}
+
+.cheatsheets-sidebar {
+  background: var(--bg-secondary);
+  border-radius: var(--radius-lg);
+  padding: var(--spacing-md);
+  overflow-y: auto;
+  box-shadow: var(--shadow-sm);
+}
+
+.cheatsheets-sidebar h3 {
+  font-family: var(--font-heading);
+  font-size: 1.25rem;
+  margin-bottom: var(--spacing-md);
+  color: var(--text-primary);
+}
+
+.cheatsheets-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+}
+
+.cheatsheet-item {
+  background: var(--bg-primary);
+  border: 2px solid var(--bg-tertiary);
+  border-radius: var(--radius-md);
+  padding: var(--spacing-sm);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.cheatsheet-item:hover {
+  border-color: var(--accent-purple);
+  transform: translateX(4px);
+}
+
+.cheatsheet-item.active {
+  border-color: var(--accent-purple);
+  background: rgba(155, 89, 182, 0.05);
+}
+
+.cheatsheet-item h4 {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: var(--spacing-xs);
+}
+
+.course-badge {
+  font-size: 0.75rem;
+  padding: 0.125rem 0.5rem;
+  background: var(--accent-purple);
+  color: white;
+  border-radius: var(--radius-sm);
+}
+
+.cheatsheet-editor {
+  background: var(--bg-secondary);
+  border-radius: var(--radius-lg);
+  padding: var(--spacing-lg);
+  display: flex;
+  flex-direction: column;
+  box-shadow: var(--shadow-sm);
+}
+
+.cheatsheet-textarea {
+  flex: 1;
+  min-height: 500px;
+  font-family: 'Courier New', monospace;
+  font-size: 0.95rem;
+  line-height: 1.6;
+}
+
+@media (max-width: 1024px) {
+  .cheatsheets-layout {
+    grid-template-columns: 1fr;
+    height: auto;
+  }
+  
+  .cheatsheets-sidebar {
+    max-height: 300px;
+  }
+}
+

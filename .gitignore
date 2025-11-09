@@ -47,20 +47,15 @@ Thumbs.db
 # Prisma
 prisma/migrations/
 
-# Documentation files (not needed in repo)
-VIEW_DATA.md
-TEST_CANVAS.md
-SETUP_POSTGRES.md
-QUICKSTART.md
-CREATE_ENV.md
-BACKEND_SETUP.md
-HACKASU_BACKEND_SETUP.md
-PORT_SETUP.md
-START_APP.md
-START_BACKEND.md
-GITHUB_COMMIT_GUIDE.md
+# Documentation files (ignore all .md except README.md)
+*.md
+!README.md
 
 # Test/helper scripts (local development only)
 test-canvas.js
 connect-and-sync-canvas.js
 check-db.js
+
+# Duplicate/old directories
+HackASU/
+frontend/frontend/

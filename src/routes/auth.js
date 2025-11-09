@@ -47,7 +47,14 @@ router.post('/register', async (req, res, next) => {
     // Log activity
     await logActivity(user.id, 'user_registered', 'user', user.id);
 
-    res.status(201).json({ user, message: 'User created successfully' });
+    // Generate JWT token for immediate login
+    const token = jwt.sign(
+      { userId: user.id, email: user.email },
+      process.env.JWT_SECRET,
+      { expiresIn: '7d' }
+    );
+
+    res.status(201).json({ user, token, message: 'User created successfully' });
   } catch (error) {
     next(error);
   }
