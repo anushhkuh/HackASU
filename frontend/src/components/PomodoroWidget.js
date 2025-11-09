@@ -7,19 +7,18 @@ const PomodoroWidget = () => {
   const [seconds, setSeconds] = useState(0);
   const [isActive, setIsActive] = useState(false);
   const [isBreak, setIsBreak] = useState(false);
-  const [sessionType, setSessionType] = useState('study'); // study, homework, pomodoro
+  const [sessionType, setSessionType] = useState('study');
   const [assignmentId, setAssignmentId] = useState(null);
+  const [isMinimized, setIsMinimized] = useState(false);
 
   const handleTimerComplete = useCallback(async () => {
-    // Play completion sound (optional - file may not exist)
     try {
       const audio = new Audio('/notification.mp3');
-      audio.play().catch(() => {}); // Ignore if audio fails
+      audio.play().catch(() => {});
     } catch (e) {
-      // Audio file not available, continue without sound
+      // Audio file not available
     }
     
-    // Save session to backend
     try {
       await apiClient.post('/api/sessions', {
         type: sessionType,
@@ -31,7 +30,6 @@ const PomodoroWidget = () => {
       console.error('Failed to save session:', error);
     }
 
-    // Show notification
     if ('Notification' in window && Notification.permission === 'granted') {
       new Notification(isBreak ? 'Break Complete!' : 'Focus Session Complete!', {
         body: isBreak ? 'Time to get back to work!' : 'Great job! Take a break.',
@@ -39,7 +37,6 @@ const PomodoroWidget = () => {
       });
     }
 
-    // Switch to break or reset
     if (!isBreak) {
       setIsBreak(true);
       setMinutes(5);
@@ -71,7 +68,6 @@ const PomodoroWidget = () => {
         });
       }, 1000);
     } else if (isActive && minutes === 0 && seconds === 0) {
-      // Timer completed
       setIsActive(false);
       handleTimerComplete();
     }
@@ -82,7 +78,6 @@ const PomodoroWidget = () => {
 
   const toggleTimer = () => {
     if (!isActive && minutes === 0 && seconds === 0) {
-      // Reset if timer is at 0
       setMinutes(isBreak ? 5 : 25);
       setSeconds(0);
     }
@@ -105,69 +100,61 @@ const PomodoroWidget = () => {
     return ((total - current) / total) * 100;
   };
 
+  const toggleMinimize = () => {
+    setIsMinimized(!isMinimized);
+  };
+
+  if (isMinimized) {
+    return (
+      <div className="pomodoro-widget minimized" onClick={toggleMinimize}>
+        <div className="minimized-timer">
+          <div className="minimized-time">{formatTime(minutes, seconds)}</div>
+          <div className="minimized-label">{isBreak ? 'Break' : 'Focus'}</div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="pomodoro-widget">
       <div className="pomodoro-header">
-        <h3>Pomodoro Timer</h3>
-        <div className="session-type-selector">
-          <button
-            className={`type-btn ${sessionType === 'study' ? 'active' : ''}`}
-            onClick={() => setSessionType('study')}
-          >
-            Study
-          </button>
-          <button
-            className={`type-btn ${sessionType === 'homework' ? 'active' : ''}`}
-            onClick={() => setSessionType('homework')}
-          >
-            Homework
-          </button>
-        </div>
+        <h3>Pomodoro</h3>
+        <button className="minimize-pomo-btn" onClick={toggleMinimize} title="Minimize">
+          ➖
+        </button>
       </div>
       
-      <div className="pomodoro-timer">
-        <div className="timer-circle">
-          <svg className="timer-svg" viewBox="0 0 200 200">
-            <circle
-              className="timer-bg"
-              cx="100"
-              cy="100"
-              r="90"
-            />
-            <circle
-              className="timer-progress"
-              cx="100"
-              cy="100"
-              r="90"
-              style={{
-                strokeDasharray: `${2 * Math.PI * 90}`,
-                strokeDashoffset: `${2 * Math.PI * 90 * (1 - getProgress() / 100)}`,
-              }}
-            />
-          </svg>
-          <div className="timer-display">
-            <div className={`timer-time ${isActive ? 'active' : ''}`}>
-              {formatTime(minutes, seconds)}
-            </div>
-            <div className="timer-label">
-              {isBreak ? 'Break Time' : 'Focus Time'}
-            </div>
+      <div className="pomodoro-timer-compact">
+        <div className="timer-display-compact">
+          <div className={`timer-time-compact ${isActive ? 'active' : ''}`}>
+            {formatTime(minutes, seconds)}
           </div>
+          <div className="timer-label-compact">
+            {isBreak ? 'Break Time' : 'Focus Time'}
+          </div>
+        </div>
+        <div className="progress-bar-compact">
+          <div
+            className="progress-fill-compact"
+            style={{
+              width: `${getProgress()}%`,
+            }}
+          />
         </div>
       </div>
 
-      <div className="pomodoro-controls">
-        <button className="btn btn-primary" onClick={toggleTimer}>
-          {isActive ? '⏸ Pause' : '▶ Start'}
+      <div className="pomodoro-controls-compact">
+        <button className="btn btn-primary btn-compact" onClick={toggleTimer}>
+          {isActive ? '⏸' : '▶'}
         </button>
-        <button className="btn btn-secondary" onClick={resetTimer}>
-          ↻ Reset
+        <button className="btn btn-secondary btn-compact" onClick={resetTimer}>
+          ↻
         </button>
       </div>
 
       {isBreak && (
-        <div className="break-indicator">
-          <span>☕ Take a well-deserved break!</span>
+        <div className="break-indicator-compact">
+          <span>☕ Break Time</span>
         </div>
       )}
     </div>
