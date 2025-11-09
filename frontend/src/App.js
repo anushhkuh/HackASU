@@ -176,6 +176,8 @@ function App() {
               key={dashboardRefreshKey} 
               selectedCourse={selectedCourse}
               onNavigateToPage={setCurrentPage}
+              courses={courses}
+              onCourseSelect={setSelectedCourse}
             />
           )}
           {currentPage === 'notes' && (

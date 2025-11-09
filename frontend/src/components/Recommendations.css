@@ -1,5 +1,10 @@
 .recommendations-section {
   margin-bottom: var(--spacing-xl);
+  background: var(--bg-secondary);
+  border-radius: var(--radius-md);
+  padding: var(--spacing-md);
+  border: 2px solid var(--bg-tertiary);
+  box-shadow: var(--shadow-sm);
 }
 
 .recommendations-header {

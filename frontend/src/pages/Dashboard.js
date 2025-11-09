@@ -45,7 +45,7 @@ const HARDCODED_ASSIGNMENTS = [
   }
 ];
 
-const Dashboard = ({ selectedCourse, onNavigateToPage }) => {
+const Dashboard = ({ selectedCourse, onNavigateToPage, courses = [], onCourseSelect }) => {
   const [assignments, setAssignments] = useState([]);
   const [assignmentsWithChunks, setAssignmentsWithChunks] = useState([]);
   const [dashboardData, setDashboardData] = useState(null);
@@ -83,6 +83,12 @@ const Dashboard = ({ selectedCourse, onNavigateToPage }) => {
       // Try to fetch dashboard data (includes badges, streaks, etc.)
       try {
         const dashboardRes = await apiClient.get('/api/dashboard');
+        console.log('📊 Dashboard data loaded:', {
+          stats: dashboardRes.stats,
+          completedAssignments: dashboardRes.stats?.completedAssignments,
+          totalAssignments: dashboardRes.stats?.totalAssignments,
+          streaks: dashboardRes.streaks,
+        });
         setDashboardData(dashboardRes);
       } catch (error) {
         console.error('Failed to load dashboard data:', error);
@@ -212,6 +218,25 @@ const Dashboard = ({ selectedCourse, onNavigateToPage }) => {
     }
   };
 
+  const handleFixStreaks = async () => {
+    try {
+      setSyncing(true);
+      console.log('🔧 Fixing streaks...');
+      const result = await apiClient.post('/api/fix/streaks');
+      console.log('✅ Fix streaks result:', result);
+      
+      // Force reload dashboard to show updated streaks and stats
+      await loadDashboard();
+      
+      alert(`✅ Streaks and badges fixed! Updated ${result.fixed || 0} assignment(s).\n\nRefresh the page to see updated stats.`);
+    } catch (error) {
+      console.error('Fix streaks failed:', error);
+      alert(error.message || 'Failed to fix streaks. Please try again.');
+    } finally {
+      setSyncing(false);
+    }
+  };
+
   const getDaysUntilDue = (dueDate) => {
     if (!dueDate) return null;
     const today = new Date();
@@ -246,6 +271,41 @@ const Dashboard = ({ selectedCourse, onNavigateToPage }) => {
     ? [...earnedBadges, ...unearnedBadges]
     : earnedBadges.slice(0, 6);
 
+  // Extract unique course names from assignments and courses
+  const getAvailableSubjects = () => {
+    const subjectMap = new Map(); // Use Map to store normalized -> original mapping
+    
+    // Add courses from Canvas
+    courses.forEach(course => {
+      if (course.name) {
+        const normalized = course.name.toLowerCase().trim();
+        // Keep the first occurrence (prefer Canvas course name formatting)
+        if (!subjectMap.has(normalized)) {
+          subjectMap.set(normalized, course.name);
+        }
+      }
+    });
+    
+    // Add course names from assignments
+    assignments.forEach(assignment => {
+      const courseName = assignment.courseName || assignment.course_name;
+      if (courseName) {
+        const normalized = courseName.toLowerCase().trim();
+        // Only add if not already present (Canvas courses take priority)
+        if (!subjectMap.has(normalized)) {
+          subjectMap.set(normalized, courseName);
+        }
+      }
+    });
+    
+    // Return sorted array of original names (not normalized)
+    return Array.from(subjectMap.values()).sort((a, b) => 
+      a.toLowerCase().localeCompare(b.toLowerCase())
+    );
+  };
+
+  const availableSubjects = getAvailableSubjects();
+
   return (
     <div className="dashboard">
       <div className="dashboard-header">
@@ -253,15 +313,68 @@ const Dashboard = ({ selectedCourse, onNavigateToPage }) => {
           <h1>🎮 Study Dashboard</h1>
           <p className="dashboard-subtitle">Your gamified study hub</p>
         </div>
-        <button 
-          className="sync-btn"
-          onClick={handleSync}
-          disabled={syncing}
-          title="Sync assignments from Canvas"
-        >
-          {syncing ? '⏳ Syncing...' : '🔄 Sync Canvas'}
-        </button>
+              <div className="dashboard-actions">
+                <button 
+                  className="sync-btn"
+                  onClick={handleSync}
+                  disabled={syncing}
+                  title="Sync assignments from Canvas"
+                >
+                  {syncing ? '⏳ Syncing...' : '🔄 Sync Canvas'}
+                </button>
+                <button 
+                  className="fix-streaks-btn"
+                  onClick={handleFixStreaks}
+                  disabled={syncing}
+                  title="Fix streaks and badges for completed assignments"
+                >
+                  {syncing ? '⏳ Fixing...' : '🔧 Fix Streaks'}
+                </button>
+              </div>
       </div>
+
+      {/* Subject/Course Buttons */}
+      {availableSubjects.length > 0 && (
+        <div className="subjects-panel">
+          <div className="subjects-header">
+            <span className="subjects-label">📚 Subjects:</span>
+          </div>
+          <div className="subjects-buttons">
+            <button
+              className={`subject-btn ${!selectedCourse ? 'active' : ''}`}
+              onClick={() => {
+                if (onCourseSelect) {
+                  onCourseSelect(null);
+                }
+              }}
+            >
+              All Subjects
+            </button>
+            {availableSubjects.map((subjectName) => {
+              // Case-insensitive comparison for selection
+              const isSelected = selectedCourse?.name?.toLowerCase() === subjectName.toLowerCase();
+              return (
+                <button
+                  key={subjectName}
+                  className={`subject-btn ${isSelected ? 'active' : ''}`}
+                  onClick={() => {
+                    // Find the course object from Canvas courses (case-insensitive)
+                    const course = courses.find(c => 
+                      c.name?.toLowerCase() === subjectName.toLowerCase()
+                    );
+                    if (onCourseSelect) {
+                      // Use the Canvas course if found, otherwise use the subject name
+                      onCourseSelect(course || { name: subjectName, id: subjectName });
+                    }
+                  }}
+                >
+                  {subjectName}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       {/* Smart Recommendations */}
       <Recommendations 
@@ -277,6 +390,8 @@ const Dashboard = ({ selectedCourse, onNavigateToPage }) => {
       <StreakDisplay 
         streak={studyStreak || { current: 0, longest: 0 }} 
         activityCalendar={dashboardData?.activityCalendar || {}}
+        assignmentsCompleted={dashboardData?.stats?.completedAssignments || 0}
+        totalAssignments={dashboardData?.stats?.totalAssignments || 0}
       />
 
       {/* Gamified Stats Section */}

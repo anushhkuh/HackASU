@@ -14,10 +14,14 @@ const Recommendations = ({ onNavigateToChunking, onNavigateToAssignments }) => {
   const loadRecommendations = async () => {
     try {
       setLoading(true);
+      console.log('📊 Loading recommendations...');
       const response = await apiClient.get('/api/recommendations');
+      console.log('✅ Recommendations loaded:', response.recommendations?.length || 0);
       setRecommendations(response.recommendations || []);
     } catch (error) {
-      console.error('Failed to load recommendations:', error);
+      console.error('❌ Failed to load recommendations:', error);
+      console.error('Error details:', error.message, error.status);
+      // Still show the section even if there's an error
       setRecommendations([]);
     } finally {
       setLoading(false);
@@ -72,114 +76,110 @@ const Recommendations = ({ onNavigateToChunking, onNavigateToAssignments }) => {
     setExpandedRec(expandedRec === rec.type ? null : rec.type);
   };
 
-  if (loading) {
-    return (
-      <div className="recommendations-section">
-        <div className="recommendations-loading">
-          <div className="spinner-small"></div>
-          <span>Loading recommendations...</span>
-        </div>
-      </div>
-    );
-  }
-
-  if (recommendations.length === 0) {
-    return (
-      <div className="recommendations-section">
-        <h2 className="section-title">💡 Smart Recommendations</h2>
-        <div className="recommendations-empty">
-          <p>No recommendations at the moment. Keep studying to get personalized tips! 🎯</p>
-        </div>
-      </div>
-    );
-  }
-
+  // Always show the recommendations section, even when loading or empty
   return (
     <div className="recommendations-section">
       <div className="recommendations-header">
         <h2 className="section-title">💡 Smart Recommendations</h2>
-        <button 
-          className="refresh-recommendations-btn"
-          onClick={loadRecommendations}
-          title="Refresh recommendations"
-        >
-          🔄
-        </button>
-      </div>
-      <div className="recommendations-list">
-        {recommendations.map((rec, index) => (
-          <div
-            key={index}
-            className={`recommendation-card priority-${rec.priority}`}
-            onClick={() => handleRecommendationClick(rec)}
+        {!loading && (
+          <button 
+            className="refresh-recommendations-btn"
+            onClick={loadRecommendations}
+            title="Refresh recommendations"
           >
-            <div className="recommendation-header">
-              <div className="recommendation-icon-priority">
-                <span className="recommendation-icon">{getRecommendationIcon(rec.type)}</span>
-                <span className="priority-badge">{getPriorityIcon(rec.priority)}</span>
-              </div>
-              <div className="recommendation-content">
-                <p className="recommendation-message">{rec.message}</p>
-                {rec.suggestedDuration && (
-                  <span className="recommendation-detail">
-                    Suggested duration: {Math.round(rec.suggestedDuration / 60)} minutes
-                  </span>
-                )}
-                {rec.currentStreak && (
-                  <span className="recommendation-detail">
-                    Current streak: {rec.currentStreak} days
-                  </span>
-                )}
-              </div>
-            </div>
-            
-            {rec.assignments && rec.assignments.length > 0 && (
-              <div className={`recommendation-assignments ${expandedRec === rec.type ? 'expanded' : ''}`}>
-                <div className="assignments-toggle">
-                  <span>
-                    {expandedRec === rec.type ? '▼' : '▶'} {rec.assignments.length} assignment(s)
-                  </span>
-                </div>
-                {expandedRec === rec.type && (
-                  <div className="assignments-list-mini">
-                    {rec.assignments.map((assignment) => (
-                      <div key={assignment.id} className="assignment-mini">
-                        <span className="assignment-title-mini">{assignment.title}</span>
-                        {assignment.dueDate && (
-                          <span className="assignment-due-mini">
-                            Due: {new Date(assignment.dueDate).toLocaleDateString()}
-                          </span>
-                        )}
-                        {assignment.expectedDuration && (
-                          <span className="assignment-duration-mini">
-                            ~{Math.round(assignment.expectedDuration / 60)} hours
-                          </span>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            )}
-            
-            {rec.type === 'chunk_assignment' && rec.assignments && rec.assignments.length > 0 && (
-              <div className="recommendation-action">
-                <button 
-                  className="action-btn"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    if (onNavigateToChunking) {
-                      onNavigateToChunking();
-                    }
-                  }}
-                >
-                  ✂️ Chunk Assignments
-                </button>
-              </div>
-            )}
-          </div>
-        ))}
+            🔄
+          </button>
+        )}
       </div>
+
+      {loading ? (
+        <div className="recommendations-loading">
+          <div className="spinner-small"></div>
+          <span>Loading recommendations...</span>
+        </div>
+      ) : recommendations.length === 0 ? (
+        <div className="recommendations-empty">
+          <p>No recommendations at the moment. Keep studying to get personalized tips! 🎯</p>
+          <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginTop: 'var(--spacing-xs)' }}>
+            Recommendations are generated based on your study activity, assignments, and streaks.
+          </p>
+        </div>
+      ) : (
+        <div className="recommendations-list">
+          {recommendations.map((rec, index) => (
+            <div
+              key={index}
+              className={`recommendation-card priority-${rec.priority}`}
+              onClick={() => handleRecommendationClick(rec)}
+            >
+              <div className="recommendation-header">
+                <div className="recommendation-icon-priority">
+                  <span className="recommendation-icon">{getRecommendationIcon(rec.type)}</span>
+                  <span className="priority-badge">{getPriorityIcon(rec.priority)}</span>
+                </div>
+                <div className="recommendation-content">
+                  <p className="recommendation-message">{rec.message}</p>
+                  {rec.suggestedDuration && (
+                    <span className="recommendation-detail">
+                      Suggested duration: {Math.round(rec.suggestedDuration / 60)} minutes
+                    </span>
+                  )}
+                  {rec.currentStreak && (
+                    <span className="recommendation-detail">
+                      Current streak: {rec.currentStreak} days
+                    </span>
+                  )}
+                </div>
+              </div>
+              
+              {rec.assignments && rec.assignments.length > 0 && (
+                <div className={`recommendation-assignments ${expandedRec === rec.type ? 'expanded' : ''}`}>
+                  <div className="assignments-toggle">
+                    <span>
+                      {expandedRec === rec.type ? '▼' : '▶'} {rec.assignments.length} assignment(s)
+                    </span>
+                  </div>
+                  {expandedRec === rec.type && (
+                    <div className="assignments-list-mini">
+                      {rec.assignments.map((assignment) => (
+                        <div key={assignment.id} className="assignment-mini">
+                          <span className="assignment-title-mini">{assignment.title}</span>
+                          {assignment.dueDate && (
+                            <span className="assignment-due-mini">
+                              Due: {new Date(assignment.dueDate).toLocaleDateString()}
+                            </span>
+                          )}
+                          {assignment.expectedDuration && (
+                            <span className="assignment-duration-mini">
+                              ~{Math.round(assignment.expectedDuration / 60)} hours
+                            </span>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+              
+              {rec.type === 'chunk_assignment' && rec.assignments && rec.assignments.length > 0 && (
+                <div className="recommendation-action">
+                  <button 
+                    className="action-btn"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      if (onNavigateToChunking) {
+                        onNavigateToChunking();
+                      }
+                    }}
+                  >
+                    ✂️ Chunk Assignments
+                  </button>
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 };

@@ -107,5 +107,49 @@ router.get('/schedule', authenticate, async (req, res, next) => {
   }
 });
 
+// Get all files from Canvas courses
+router.get('/files', authenticate, async (req, res, next) => {
+  try {
+    if (!req.user.canvasToken || !req.user.canvasInstanceUrl) {
+      return res.status(400).json({ error: 'Canvas not connected' });
+    }
+
+    const canvasAPI = new CanvasAPI(req.user.canvasToken, req.user.canvasInstanceUrl);
+    const files = await canvasAPI.getAllFiles();
+
+    // Filter for PDFs only
+    const pdfFiles = files.filter(file => 
+      file.content_type === 'application/pdf' || 
+      file.filename?.toLowerCase().endsWith('.pdf')
+    );
+
+    res.json({ files: pdfFiles });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// Get files for a specific course
+router.get('/files/:courseId', authenticate, async (req, res, next) => {
+  try {
+    if (!req.user.canvasToken || !req.user.canvasInstanceUrl) {
+      return res.status(400).json({ error: 'Canvas not connected' });
+    }
+
+    const canvasAPI = new CanvasAPI(req.user.canvasToken, req.user.canvasInstanceUrl);
+    const files = await canvasAPI.getCourseFiles(req.params.courseId);
+
+    // Filter for PDFs only
+    const pdfFiles = files.filter(file => 
+      file.content_type === 'application/pdf' || 
+      file.filename?.toLowerCase().endsWith('.pdf')
+    );
+
+    res.json({ files: pdfFiles });
+  } catch (error) {
+    next(error);
+  }
+});
+
 export default router;
 

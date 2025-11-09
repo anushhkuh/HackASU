@@ -3,7 +3,7 @@ import { prisma } from '../server.js';
 import { authenticate } from '../middleware/auth.js';
 import { CanvasAPI } from '../utils/canvas.js';
 import { logActivity } from '../utils/activityLogger.js';
-import { updateStreaks } from '../utils/gamification.js';
+import { updateStreaks, checkBadges } from '../utils/gamification.js';
 
 const router = express.Router();
 
@@ -214,7 +214,13 @@ router.put('/:id', authenticate, async (req, res, next) => {
 
     if (status === 'completed' && assignment.status !== 'completed') {
       updateData.completedAt = new Date();
+      // Update both assignment_completion and daily_study streaks
       await updateStreaks(req.user.id, 'assignment_completion');
+      await updateStreaks(req.user.id, 'daily_study');
+      // Check for badges
+      await checkBadges(req.user.id, 'assignment_completed');
+      // Log activity
+      await logActivity(req.user.id, 'assignment_completed', 'assignment', assignment.id);
     }
 
     const updated = await prisma.assignment.update({

@@ -10,9 +10,13 @@ const Notes = ({ selectedCourse }) => {
   const [noteType, setNoteType] = useState('general');
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [canvasFiles, setCanvasFiles] = useState([]);
+  const [loadingFiles, setLoadingFiles] = useState(false);
+  const [summarizing, setSummarizing] = useState(false);
 
   useEffect(() => {
     loadNotes();
+    loadCanvasFiles();
   }, [selectedCourse]);
 
   const loadNotes = async () => {
@@ -91,6 +95,73 @@ const Notes = ({ selectedCourse }) => {
     setNoteType('general');
   };
 
+  const loadCanvasFiles = async () => {
+    try {
+      setLoadingFiles(true);
+      const endpoint = selectedCourse 
+        ? `/api/canvas/files/${selectedCourse.id}`
+        : '/api/canvas/files';
+      const response = await apiClient.get(endpoint);
+      setCanvasFiles(response.files || []);
+    } catch (error) {
+      console.error('Failed to load Canvas files:', error);
+      // If Canvas not connected, that's OK
+      setCanvasFiles([]);
+    } finally {
+      setLoadingFiles(false);
+    }
+  };
+
+  const handleSummarizePDF = async (file) => {
+    if (!window.confirm(`Summarize "${file.filename || file.display_name}" with Gemini AI?`)) {
+      return;
+    }
+
+    try {
+      setSummarizing(true);
+      console.log('📄 Starting PDF summarization:', {
+        fileId: file.id,
+        fileName: file.filename || file.display_name,
+        courseId: file.courseId || selectedCourse?.id,
+        courseName: file.courseName || selectedCourse?.name,
+      });
+
+      const response = await apiClient.post('/api/gemini/summarize-pdf', {
+        fileId: file.id,
+        courseId: file.courseId || selectedCourse?.id,
+        courseName: file.courseName || selectedCourse?.name,
+      });
+
+      console.log('✅ PDF summarization response:', response);
+
+      if (response.success) {
+        alert('PDF summarized successfully! The summary has been saved as a note.');
+        
+        // Load notes to show the new summary
+        await loadNotes();
+        
+        // Select the newly created note
+        if (response.note) {
+          const newNote = await apiClient.get(`/api/notes/${response.note.id}`);
+          handleSelectNote(newNote.note);
+        }
+      }
+    } catch (error) {
+      console.error('❌ Failed to summarize PDF:', error);
+      console.error('Error details:', {
+        message: error.message,
+        status: error.status,
+        data: error.data,
+        stack: error.stack,
+      });
+      
+      const errorMessage = error.message || error.error || error.data?.error || 'Failed to summarize PDF. Please try again.';
+      alert(`Error: ${errorMessage}\n\nMake sure:\n1. Backend server is running on port 3000\n2. GEMINI_API_KEY is set in .env\n3. Canvas is connected\n\nCheck the browser console (F12) for more details.`);
+    } finally {
+      setSummarizing(false);
+    }
+  };
+
   if (loading) {
     return <div className="loading">Loading notes...</div>;
   }
@@ -99,10 +170,53 @@ const Notes = ({ selectedCourse }) => {
     <div className="notes-page">
       <div className="notes-header">
         <h1>My Notes</h1>
-        <button className="btn btn-primary" onClick={handleNewNote}>
-          + New Note
-        </button>
+        <div className="notes-header-actions">
+          <button 
+            className="btn btn-secondary" 
+            onClick={loadCanvasFiles}
+            disabled={loadingFiles}
+            title="Refresh Canvas files"
+          >
+            {loadingFiles ? '⏳ Loading...' : '🔄 Refresh Canvas Files'}
+          </button>
+          <button className="btn btn-primary" onClick={handleNewNote}>
+            + New Note
+          </button>
+        </div>
       </div>
+
+      {/* Canvas PDF Files Section */}
+      {canvasFiles.length > 0 && (
+        <div className="canvas-files-section">
+          <h3>📄 PDF Files from Canvas</h3>
+          <p className="canvas-files-description">
+            Click "Summarize" to generate AI-powered notes from PDF files using Gemini
+          </p>
+          <div className="canvas-files-list">
+            {canvasFiles.map((file) => (
+              <div key={file.id} className="canvas-file-item">
+                <div className="file-info">
+                  <span className="file-icon">📄</span>
+                  <div className="file-details">
+                    <h4>{file.filename || file.display_name}</h4>
+                    <p className="file-meta">
+                      {file.courseName || selectedCourse?.name || 'Unknown Course'}
+                      {file.size && ` • ${(file.size / 1024).toFixed(1)} KB`}
+                    </p>
+                  </div>
+                </div>
+                <button
+                  className="btn btn-primary btn-small"
+                  onClick={() => handleSummarizePDF(file)}
+                  disabled={summarizing}
+                >
+                  {summarizing ? '⏳ Summarizing...' : '✨ Summarize with Gemini'}
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       <div className="notes-layout">
         <div className="notes-sidebar">

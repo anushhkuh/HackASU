@@ -203,6 +203,76 @@ export class CanvasAPI {
       throw new Error(`Canvas API error: ${error.response?.data?.message || error.message}`);
     }
   }
+
+  /**
+   * Get files for a specific course
+   */
+  async getCourseFiles(courseId) {
+    try {
+      const response = await this.client.get(`/courses/${courseId}/files`, {
+        params: {
+          per_page: 100,
+        },
+      });
+      return response.data;
+    } catch (error) {
+      throw new Error(`Canvas API error: ${error.response?.data?.message || error.message}`);
+    }
+  }
+
+  /**
+   * Get all files across all courses
+   */
+  async getAllFiles() {
+    try {
+      const courses = await this.getCourses();
+      const allFiles = [];
+
+      for (const course of courses) {
+        try {
+          const files = await this.getCourseFiles(course.id);
+          files.forEach(file => {
+            allFiles.push({
+              ...file,
+              courseId: course.id,
+              courseName: course.name,
+            });
+          });
+        } catch (error) {
+          console.error(`Error fetching files for course ${course.id}:`, error.message);
+        }
+      }
+
+      return allFiles;
+    } catch (error) {
+      throw new Error(`Canvas API error: ${error.response?.data?.message || error.message}`);
+    }
+  }
+
+  /**
+   * Get file download URL
+   */
+  async getFileUrl(fileId) {
+    try {
+      const response = await this.client.get(`/files/${fileId}`, {
+        params: {
+          include: ['preview_url'],
+        },
+      });
+      const fileData = response.data;
+      
+      // Ensure we have a download URL
+      if (!fileData.url && fileData.id) {
+        // Construct download URL if not provided
+        fileData.url = `${this.baseUrl}/api/v1/files/${fileId}?access_token=${this.accessToken}`;
+      }
+      
+      return fileData;
+    } catch (error) {
+      const errorMsg = error.response?.data?.message || error.message;
+      throw new Error(`Canvas API error: ${errorMsg}`);
+    }
+  }
 }
 
 /**

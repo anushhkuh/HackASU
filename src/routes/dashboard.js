@@ -170,6 +170,15 @@ router.get('/', authenticate, async (req, res, next) => {
       },
     });
 
+    // Debug logging
+    console.log(`📊 Dashboard stats for user ${req.user.id}:`, {
+      totalAssignments,
+      completedAssignments,
+      completionRate: totalAssignments > 0
+        ? Math.round((completedAssignments / totalAssignments) * 100)
+        : 0,
+    });
+
     // Activity summary (last 30 days)
     const activitySummary = await prisma.activityLog.groupBy({
       by: ['action'],

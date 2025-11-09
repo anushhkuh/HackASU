@@ -13,6 +13,7 @@ import canvasRoutes from './routes/canvas.js';
 import recommendationRoutes from './routes/recommendations.js';
 import geminiRoutes from './routes/gemini.js';
 import syncRoutes from './routes/sync.js';
+import fixRoutes from './routes/fix.js';
 import { errorHandler } from './middleware/errorHandler.js';
 import { logger } from './utils/logger.js';
 
@@ -32,6 +33,10 @@ app.use(express.urlencoded({ extended: true }));
 // Request logging
 app.use((req, res, next) => {
   logger.info(`${req.method} ${req.path}`);
+  console.log(`📥 ${req.method} ${req.path}`, {
+    headers: req.headers['authorization'] ? 'Has auth' : 'No auth',
+    body: req.body ? Object.keys(req.body) : 'No body',
+  });
   next();
 });
 
@@ -52,6 +57,7 @@ app.use('/api/canvas', canvasRoutes);
 app.use('/api/recommendations', recommendationRoutes);
 app.use('/api/gemini', geminiRoutes);
 app.use('/api/sync', syncRoutes);
+app.use('/api/fix', fixRoutes);
 
 // Error handling
 app.use(errorHandler);

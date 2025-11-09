@@ -49,12 +49,14 @@ async function apiRequest(endpoint, options = {}) {
         errorData = { error: response.statusText || `Server error: ${response.status}` };
       }
       
-      // Provide more helpful error messages
-      if (response.status === 0 || response.status >= 500) {
-        throw new Error('Server error. Please check if the backend is running.');
-      }
+      // Use the actual error message from the backend
+      const errorMessage = errorData.error || errorData.message || `Server error: ${response.status}`;
       
-      throw new Error(errorData.error || errorData.message || `Error: ${response.status}`);
+      // Create error with backend message
+      const error = new Error(errorMessage);
+      error.status = response.status;
+      error.data = errorData;
+      throw error;
     }
 
     const contentType = response.headers.get('content-type');

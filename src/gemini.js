@@ -3,7 +3,7 @@ import axios from 'axios';
 /**
  * Gemini API client for AI-powered analysis and recommendations
  */
-export async function askGemini(prompt) {
+export async function askGemini(prompt, options = {}) {
   const GEMINI_MODEL = process.env.GEMINI_MODEL || 'gemini-1.5-pro';
   const API_KEY = process.env.GEMINI_API_KEY;
 
@@ -12,13 +12,26 @@ export async function askGemini(prompt) {
   }
 
   try {
+    // Build parts array - can include both text and file data
+    const parts = [{ text: prompt }];
+    
+    // If PDF data is provided (base64), add it as inline data
+    if (options.pdfData && options.mimeType) {
+      parts.push({
+        inline_data: {
+          mime_type: options.mimeType,
+          data: options.pdfData,
+        },
+      });
+    }
+
     const response = await axios.post(
       `https://generativelanguage.googleapis.com/v1/models/${GEMINI_MODEL}:generateContent?key=${API_KEY}`,
       {
         contents: [
           {
             role: 'user',
-            parts: [{ text: prompt }],
+            parts: parts,
           },
         ],
       },
@@ -154,6 +167,39 @@ Provide a friendly, encouraging response that helps the student succeed.`;
     return result;
   } catch (error) {
     throw new Error(`Gemini recommendation generation failed: ${error.message}`);
+  }
+}
+
+/**
+ * Summarize PDF content using Gemini
+ */
+export async function summarizePDF(pdfContent, fileName, courseName) {
+  const prompt = `You are an AI study assistant helping a student understand course materials.
+
+Please summarize the following PDF document from the course "${courseName}".
+
+PDF File: ${fileName}
+
+PDF Content:
+${pdfContent}
+
+Please provide:
+1. A concise summary of the main topics and key concepts
+2. Important definitions, formulas, or facts
+3. Main takeaways and learning objectives
+4. Any questions or areas that might need further study
+
+Format the summary in a clear, organized way that's easy to study from. Use bullet points and clear headings.`;
+
+  try {
+    const result = await askGemini(prompt);
+    return {
+      summary: result.reply,
+      fileName,
+      courseName,
+    };
+  } catch (error) {
+    throw new Error(`Gemini PDF summarization failed: ${error.message}`);
   }
 }
 

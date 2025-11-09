@@ -118,12 +118,37 @@ export const getRecommendations = async (userId) => {
     });
 
     const studyStreak = streaks.find(s => s.type === 'daily_study');
-    if (studyStreak && studyStreak.current > 0 && studyStreak.current < 7) {
+    if (studyStreak) {
+      if (studyStreak.current === 0) {
+        // No streak yet - encourage starting one
+        recommendations.push({
+          type: 'streak_encouragement',
+          priority: 'medium',
+          message: `Start your study streak today! Complete an assignment or study session to begin.`,
+          currentStreak: 0,
+        });
+      } else if (studyStreak.current > 0 && studyStreak.current < 7) {
+        recommendations.push({
+          type: 'streak_encouragement',
+          priority: 'low',
+          message: `🔥 You're on a ${studyStreak.current}-day study streak! Keep it up to reach 7 days!`,
+          currentStreak: studyStreak.current,
+        });
+      } else if (studyStreak.current >= 7) {
+        recommendations.push({
+          type: 'streak_encouragement',
+          priority: 'low',
+          message: `🎉 Amazing! You're on a ${studyStreak.current}-day streak! Keep the momentum going!`,
+          currentStreak: studyStreak.current,
+        });
+      }
+    } else {
+      // No streak record at all - encourage starting
       recommendations.push({
         type: 'streak_encouragement',
-        priority: 'low',
-        message: `You're on a ${studyStreak.current}-day study streak! Keep it up to reach 7 days!`,
-        currentStreak: studyStreak.current,
+        priority: 'medium',
+        message: `Start your study streak today! Complete an assignment or study session to begin.`,
+        currentStreak: 0,
       });
     }
 

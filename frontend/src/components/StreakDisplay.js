@@ -1,9 +1,18 @@
 import React from 'react';
 import './StreakDisplay.css';
 
-const StreakDisplay = ({ streak, activityCalendar = {} }) => {
+const StreakDisplay = ({ streak, activityCalendar = {}, assignmentsCompleted = 0, totalAssignments = 0 }) => {
   const currentStreak = streak?.current || 0;
   const longestStreak = streak?.longest || 0;
+  
+  // Debug logging
+  console.log('🔥 StreakDisplay props:', {
+    currentStreak,
+    longestStreak,
+    assignmentsCompleted,
+    totalAssignments,
+    streak,
+  });
   
   // Generate last 30 days for mini calendar
   const today = new Date();
@@ -59,6 +68,10 @@ const StreakDisplay = ({ streak, activityCalendar = {} }) => {
             <div className="streak-stat-item">
               <span className="streak-stat-label">Longest</span>
               <span className="streak-stat-value">{longestStreak} days</span>
+            </div>
+            <div className="streak-stat-item">
+              <span className="streak-stat-label">Assignments</span>
+              <span className="streak-stat-value">{assignmentsCompleted} / {totalAssignments}</span>
             </div>
           </div>
         </div>
