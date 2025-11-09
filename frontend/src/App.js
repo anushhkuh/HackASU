@@ -172,7 +172,11 @@ function App() {
         />
         <main className="main-content">
           {currentPage === 'dashboard' && (
-            <Dashboard key={dashboardRefreshKey} selectedCourse={selectedCourse} />
+            <Dashboard 
+              key={dashboardRefreshKey} 
+              selectedCourse={selectedCourse}
+              onNavigateToPage={setCurrentPage}
+            />
           )}
           {currentPage === 'notes' && (
             <Notes selectedCourse={selectedCourse} />

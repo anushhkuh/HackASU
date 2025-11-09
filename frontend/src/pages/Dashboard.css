@@ -8,6 +8,15 @@
   justify-content: space-between;
   align-items: flex-start;
   margin-bottom: var(--spacing-xl);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background: var(--bg-primary);
+  padding: var(--spacing-md) 0;
+  margin-top: calc(var(--spacing-md) * -1);
+  padding-top: var(--spacing-md);
+  border-bottom: 2px solid var(--bg-tertiary);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
 }
 
 .dashboard-header h1 {
@@ -462,6 +471,7 @@
   display: flex;
   gap: var(--spacing-xs);
   flex-wrap: wrap;
+  align-items: center;
 }
 
 .badge-urgency {
@@ -470,6 +480,14 @@
   border-radius: var(--radius-sm);
   font-weight: 600;
   color: white;
+  white-space: nowrap;
+}
+
+/* Compact chunk badge - less elongated */
+.assignment-badges .badge-info {
+  padding: 0.35rem 0.55rem; /* More balanced padding (less horizontal) */
+  font-size: 0.8rem;
+  white-space: nowrap;
 }
 
 .assignments-count {
@@ -494,5 +512,90 @@
 
 .assignment-description p {
   margin: 0;
+}
+
+/* Chunks Preview Section */
+.chunks-list-preview {
+  margin-top: var(--spacing-sm);
+  padding-top: var(--spacing-sm);
+  border-top: 1px solid var(--bg-tertiary);
+}
+
+.chunks-preview-header {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  margin-bottom: var(--spacing-xs);
+}
+
+.chunks-preview-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: var(--spacing-xs);
+}
+
+.chunk-preview-item {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  padding: var(--spacing-xs);
+  background: var(--bg-tertiary);
+  border-radius: var(--radius-sm);
+  font-size: 0.8rem;
+  transition: all var(--transition-fast);
+}
+
+.chunk-preview-item:hover {
+  background: var(--bg-secondary);
+  transform: translateX(2px);
+}
+
+.chunk-preview-item.completed {
+  background: rgba(39, 174, 96, 0.1);
+  border: 1px solid var(--success);
+}
+
+.chunk-preview-number {
+  width: 20px;
+  height: 20px;
+  background: var(--primary-orange);
+  color: white;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 0.7rem;
+  flex-shrink: 0;
+}
+
+.chunk-preview-item.completed .chunk-preview-number {
+  background: var(--success);
+}
+
+.chunk-preview-title {
+  flex: 1;
+  color: var(--text-primary);
+  font-weight: 500;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.chunk-preview-status {
+  font-size: 0.9rem;
+  flex-shrink: 0;
+}
+
+.chunk-preview-more {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--spacing-xs);
+  background: var(--bg-tertiary);
+  border-radius: var(--radius-sm);
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  font-style: italic;
 }
 

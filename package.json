@@ -11,6 +11,7 @@
     "db:migrate": "prisma migrate dev",
     "db:studio": "prisma studio",
     "db:seed": "node src/database/seed.js",
+    "db:seed-badges": "node prisma/seed-badges.js",
     "test:canvas": "node test-canvas.js",
     "canvas:sync": "node connect-and-sync-canvas.js"
   },

@@ -7,6 +7,15 @@
 .attention-header {
   text-align: center;
   margin-bottom: var(--spacing-xl);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background: var(--bg-primary);
+  padding: var(--spacing-md) 0;
+  margin-top: calc(var(--spacing-md) * -1);
+  padding-top: var(--spacing-md);
+  border-bottom: 2px solid var(--bg-tertiary);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
 }
 
 .attention-header h1 {

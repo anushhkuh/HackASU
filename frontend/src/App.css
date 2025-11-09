@@ -260,6 +260,7 @@ body {
   border-radius: var(--radius-sm);
   font-size: 0.875rem;
   font-weight: 500;
+  white-space: nowrap;
 }
 
 .badge-success {
@@ -275,6 +276,7 @@ body {
 .badge-info {
   background-color: rgba(52, 152, 219, 0.1);
   color: var(--info);
+  padding: 0.3rem 0.6rem; /* More compact padding for chunk badges */
 }
 
 /* Scrollbar - ADHD-friendly */
