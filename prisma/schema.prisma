@@ -1,0 +1,195 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id                String    @id @default(cuid())
+  email             String    @unique
+  password          String
+  name              String?
+  canvasToken       String?   // OAuth2 token for Canvas API
+  canvasUserId      String?   // Canvas user ID
+  canvasInstanceUrl String?   // Canvas instance URL
+  preferences       Json?     // User preferences (theme, notifications, etc.)
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  // Relations
+  assignments       Assignment[]
+  notes             Note[]
+  studySessions     StudySession[]
+  badges            UserBadge[]
+  reminders         Reminder[]
+  activityLogs      ActivityLog[]
+  streaks           Streak[]
+}
+
+model Assignment {
+  id                String    @id @default(cuid())
+  canvasId          String?   @unique // Canvas assignment ID
+  userId            String
+  courseId          String?   // Canvas course ID
+  courseName        String?
+  title             String
+  description       String?
+  dueDate           DateTime?
+  expectedDuration  Int?      // Expected duration in minutes
+  status            String    @default("pending") // pending, in_progress, completed, overdue
+  priority          String    @default("medium") // low, medium, high
+  completedAt       DateTime?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+  syncedAt          DateTime? // Last sync from Canvas
+
+  // Relations
+  user              User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  chunks            AssignmentChunk[]
+  studySessions     StudySession[]
+
+  @@index([userId])
+  @@index([dueDate])
+}
+
+model AssignmentChunk {
+  id           String     @id @default(cuid())
+  assignmentId String
+  title        String
+  description  String?
+  duration     Int        // Duration in minutes
+  order        Int        // Order within assignment
+  status       String     @default("pending") // pending, in_progress, completed
+  completedAt  DateTime?
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+
+  // Relations
+  assignment   Assignment @relation(fields: [assignmentId], references: [id], onDelete: Cascade)
+
+  @@index([assignmentId])
+}
+
+model Note {
+  id          String   @id @default(cuid())
+  userId      String
+  title       String
+  content     String   // Markdown or plain text
+  type        String   // lecture, cheatsheet, assignment, general
+  tags        String[] // Array of tags
+  courseId    String?  // Canvas course ID
+  courseName  String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([type])
+}
+
+model StudySession {
+  id          String     @id @default(cuid())
+  userId      String
+  assignmentId String?   // Optional: linked to assignment
+  type        String     // pomodoro, study, homework
+  duration    Int        // Duration in minutes
+  completed   Boolean    @default(false)
+  startedAt   DateTime   @default(now())
+  endedAt     DateTime?
+  breakDuration Int?     // Break duration in minutes (for Pomodoro)
+  notes       String?    // Session notes
+
+  // Relations
+  user        User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  assignment  Assignment? @relation(fields: [assignmentId], references: [id], onDelete: SetNull)
+
+  @@index([userId])
+  @@index([startedAt])
+}
+
+model Badge {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  description String
+  icon        String?  // Icon name or URL
+  category    String   // study, streak, achievement, etc.
+  createdAt   DateTime @default(now())
+
+  // Relations
+  userBadges  UserBadge[]
+}
+
+model UserBadge {
+  id        String   @id @default(cuid())
+  userId    String
+  badgeId   String
+  earnedAt  DateTime @default(now())
+
+  // Relations
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  badge     Badge    @relation(fields: [badgeId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, badgeId])
+  @@index([userId])
+}
+
+model Streak {
+  id          String   @id @default(cuid())
+  userId      String
+  type        String   // daily_study, assignment_completion, etc.
+  current     Int      @default(0)
+  longest     Int      @default(0)
+  lastUpdated DateTime @default(now())
+
+  // Relations
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, type])
+  @@index([userId])
+}
+
+model Reminder {
+  id          String   @id @default(cuid())
+  userId      String
+  title       String
+  message     String
+  type        String   // assignment_due, study_time, break, custom
+  scheduledAt DateTime
+  sent        Boolean  @default(false)
+  sentAt      DateTime?
+  assignmentId String? // Optional: linked to assignment
+  createdAt   DateTime @default(now())
+
+  // Relations
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([scheduledAt])
+  @@index([sent])
+}
+
+model ActivityLog {
+  id          String   @id @default(cuid())
+  userId      String
+  action      String   // assignment_completed, session_started, note_created, etc.
+  entityType  String?  // assignment, session, note, etc.
+  entityId    String?
+  metadata    Json?    // Additional data for ML/recommendations
+  timestamp   DateTime @default(now())
+
+  // Relations
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([timestamp])
+  @@index([action])
+}
+

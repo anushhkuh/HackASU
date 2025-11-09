@@ -1,70 +1,138 @@
-# Getting Started with Create React App
+# Focus Pocus - ADHD Study Management App
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+A comprehensive study management application for students with ADHD, featuring Canvas LMS integration, Pomodoro timer, gamification, and personalized study tools.
+
+## Features
+
+### Frontend (React)
+- **Assignment Dashboard**: Visual progress tracking with heatmaps and streaks
+- **Study Plan Creator**: Create and manage assignments with chunking
+- **Canvas LMS Integration**: Import assignments directly from Canvas
+- **Pomodoro Timer**: Draggable timer widget for focused study sessions
+- **Progress Tracking**: Visual progress bars and completion tracking
+
+### Backend (Node.js/Express)
+- **Canvas LMS Integration**: OAuth2 authentication and automatic assignment syncing
+- **Assignment Management**: Track assignments with due dates, durations, and chunking
+- **Study Sessions**: Pomodoro timer integration and study session tracking
+- **Note-Taking**: Lecture notes, exam cheatsheets, and assignment planning templates
+- **Gamification**: Badges, streaks, and progress tracking
+- **Reminders**: Smart reminders for assignments and study sessions
+- **Activity Logging**: Comprehensive activity tracking for ML/recommendations
+- **Dashboard**: Personalized dashboard with stats and insights
+
+## Tech Stack
+
+### Frontend
+- **Framework**: React 19.2.0
+- **Build Tool**: Create React App
+- **Styling**: CSS
+
+### Backend
+- **Runtime**: Node.js
+- **Framework**: Express.js
+- **Database**: PostgreSQL with Prisma ORM (or SQLite for development)
+- **Authentication**: JWT + Canvas OAuth2
+
+## Getting Started
+
+### Prerequisites
+- Node.js (v14 or higher)
+- npm or yarn
+- PostgreSQL (optional - can use SQLite for development)
+
+### Frontend Setup
+
+1. **Install dependencies:**
+   ```bash
+   npm install
+   ```
+
+2. **Create `.env.local` file:**
+   ```env
+   PORT=3001
+   REACT_APP_USE_BACKEND=true
+   REACT_APP_API_BASE_URL=http://localhost:3000
+   ```
+
+3. **Start the development server:**
+   ```bash
+   npm start
+   ```
+
+   The app will open at `http://localhost:3001`
+
+### Backend Setup
+
+1. **Install dependencies:**
+   ```bash
+   npm install
+   ```
+
+2. **Set up environment variables:**
+   Create a `.env` file:
+   ```env
+   DATABASE_URL="file:./dev.db"
+   JWT_SECRET="your-secret-key"
+   PORT=3000
+   NODE_ENV=development
+   FRONTEND_URL=http://localhost:3001
+   ```
+
+3. **Set up database:**
+   ```bash
+   npm run db:generate
+   npm run db:migrate
+   ```
+
+4. **Start the backend server:**
+   ```bash
+   npm start
+   ```
+
+   The backend will run on `http://localhost:3000`
+
+## Project Structure
+
+```
+adhd-study-app/
+├── src/              # Frontend React components
+│   ├── App.js        # Main app component
+│   ├── Dashboard.js  # Assignment dashboard
+│   ├── StudyPlan.js  # Study plan creator
+│   ├── Pomodoro.js   # Pomodoro timer
+│   └── ...
+├── public/           # Static assets
+├── server/           # Proxy server (optional)
+├── src/              # Backend source (if backend in root)
+│   ├── server.js     # Express server
+│   ├── routes/       # API routes
+│   └── ...
+└── prisma/           # Database schema
+```
 
 ## Available Scripts
 
-In the project directory, you can run:
+### Frontend
+- `npm start` - Start React development server
+- `npm run build` - Build for production
+- `npm test` - Run tests
 
-### `npm start`
+### Backend
+- `npm start` - Start Express server
+- `npm run dev` - Start with nodemon (auto-reload)
+- `npm run db:generate` - Generate Prisma client
+- `npm run db:migrate` - Run database migrations
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+## Canvas LMS Integration
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+The app supports importing assignments from Canvas LMS:
 
-### `npm test`
+1. Click "Import from Canvas" in the Study Plan section
+2. Enter your Canvas instance URL (e.g., `https://your-school.instructure.com`)
+3. Enter your Canvas access token
+4. Select courses and assignments to import
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+## License
 
-### `npm run build`
-
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
-
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
-
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
-
-### `npm run eject`
-
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
-
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
-
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
-
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
-
-## Learn More
-
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
-
-To learn React, check out the [React documentation](https://reactjs.org/).
-
-### Code Splitting
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
-
-### Analyzing the Bundle Size
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
-
-### Making a Progressive Web App
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
-
-### Advanced Configuration
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
-
-### Deployment
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
-
-### `npm run build` fails to minify
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+MIT

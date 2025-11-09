@@ -1,29 +1,41 @@
 # See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
 
-# dependencies
-/node_modules
+# Dependencies
+node_modules/
+package-lock.json
+yarn.lock
 /.pnp
 .pnp.js
 
-# testing
+# Testing
 /coverage
 
-# production
+# Production
 /build
 
-# misc
-.DS_Store
+# Environment variables
+.env
 .env.local
 .env.development.local
 .env.test.local
 .env.production.local
-.env
+.env.production
 
-# logs
+# Database
+*.db
+*.sqlite
+prisma/migrations/
+
+# Logs
+logs/
+*.log
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
-*.log
+
+# OS
+.DS_Store
+Thumbs.db
 
 # IDE
 .vscode/
@@ -32,13 +44,23 @@ yarn-error.log*
 *.swo
 *~
 
-# OS
-Thumbs.db
-.DS_Store
+# Prisma
+prisma/migrations/
 
-# Temporary setup files (can be removed)
+# Documentation files (not needed in repo)
+VIEW_DATA.md
+TEST_CANVAS.md
+SETUP_POSTGRES.md
+QUICKSTART.md
+CREATE_ENV.md
 BACKEND_SETUP.md
 HACKASU_BACKEND_SETUP.md
 PORT_SETUP.md
 START_APP.md
 START_BACKEND.md
+GITHUB_COMMIT_GUIDE.md
+
+# Test/helper scripts (local development only)
+test-canvas.js
+connect-and-sync-canvas.js
+check-db.js
