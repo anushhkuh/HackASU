@@ -1,138 +1,83 @@
-# Lock In (ADHD) - ADHD Study Management App
+# 🧠 Let's Lock In
 
-A comprehensive study management application for students with ADHD, featuring Canvas LMS integration, Pomodoro timer, gamification, and personalized study tools.
+An ADHD-smart study companion built for neurodiverse learners.
 
-## Features
+# 📚 Overview
 
-### Frontend (React)
-- **Assignment Dashboard**: Visual progress tracking with heatmaps and streaks
-- **Study Plan Creator**: Create and manage assignments with chunking
-- **Canvas LMS Integration**: Import assignments directly from Canvas
-- **Pomodoro Timer**: Draggable timer widget for focused study sessions
-- **Progress Tracking**: Visual progress bars and completion tracking
+Let’s Lock In is a web platform designed to help students-especially those with ADHD - organize, focus, and complete assignments more effectively.
+By integrating with Canvas LMS, the platform automatically fetches coursework, deadlines, and effort estimates, then gamifies productivity through rewards, focus timers, and attention tracking.
 
-### Backend (Node.js/Express)
-- **Canvas LMS Integration**: OAuth2 authentication and automatic assignment syncing
-- **Assignment Management**: Track assignments with due dates, durations, and chunking
-- **Study Sessions**: Pomodoro timer integration and study session tracking
-- **Note-Taking**: Lecture notes, exam cheatsheets, and assignment planning templates
-- **Gamification**: Badges, streaks, and progress tracking
-- **Reminders**: Smart reminders for assignments and study sessions
-- **Activity Logging**: Comprehensive activity tracking for ML/recommendations
-- **Dashboard**: Personalized dashboard with stats and insights
+It’s built to support the ADHD brain: dynamic, interest-driven, and responsive — turning academic overwhelm into structured, achievable progress.
 
-## Tech Stack
+# ✨ Key Features 
 
-### Frontend
-- **Framework**: React 19.2.0
-- **Build Tool**: Create React App
-- **Styling**: CSS
+Key ADHD-Specific Features
 
-### Backend
-- **Runtime**: Node.js
-- **Framework**: Express.js
-- **Database**: PostgreSQL with Prisma ORM (or SQLite for development)
-- **Authentication**: JWT + Canvas OAuth2
+🎮 Gamified Dashboard: Earn badges, streaks, and points for staying on track.
 
-## Getting Started
+⏱️ Pomodoro Timer & Chunking: Break large tasks into focus sessions and manageable steps.
 
-### Prerequisites
-- Node.js (v14 or higher)
-- npm or yarn
-- PostgreSQL (optional - can use SQLite for development)
+📅 Smart Reminders & Recommendations: Personalized suggestions based on user activity and assignment patterns.
 
-### Frontend Setup
+🧠 Attention Checks: Optional face and pose estimation (MediaPipe) to detect when focus drifts — with clear consent and privacy controls.
 
-1. **Install dependencies:**
-   ```bash
-   npm install
-   ```
+📝 In-App Notes & Study Tools: Create lecture notes, exam “cheatsheets,” and summaries right inside the dashboard.
 
-2. **Create `.env.local` file:**
-   ```env
-   PORT=3001
-   REACT_APP_USE_BACKEND=true
-   REACT_APP_API_BASE_URL=http://localhost:3000
-   ```
+📊 Canvas Sync: Automatically imports due dates, grades, and announcements for real-time progress tracking.
 
-3. **Start the development server:**
-   ```bash
-   npm start
-   ```
+# 🧩 Architecture & Tech Stack 
 
-   The app will open at `http://localhost:3001`
+Frontend: React.js (interactive UI)
+Backend: Node.js (API handling, gamification logic)
+Database: PostgreSQL
+Integration: Canvas API with OAuth2 authentication
+Attention Tracking: MediaPipe
+Real-Time Features: WebSockets for live study rooms
 
-### Backend Setup
+# 🔐 Privacy & Compliance 
 
-1. **Install dependencies:**
-   ```bash
-   npm install
-   ```
+100% opt-in attention tracking - user consent required- runs in browser and does not store recordings.
 
-2. **Set up environment variables:**
-   Create a `.env` file:
-   ```env
-   DATABASE_URL="file:./dev.db"
-   JWT_SECRET="your-secret-key"
-   PORT=3000
-   NODE_ENV=development
-   FRONTEND_URL=http://localhost:3001
-   ```
+All Canvas data is securely fetched via OAuth2; no password storage.
 
-3. **Set up database:**
-   ```bash
-   npm run db:generate
-   npm run db:migrate
-   ```
+Users can delete all data at any time.
 
-4. **Start the backend server:**
-   ```bash
-   npm start
-   ```
+# 🚀 How It Works 
 
-   The backend will run on `http://localhost:3000`
+Student logs in with Canvas credentials.
 
-## Project Structure
+Dashboard loads assignments and deadlines automatically.
 
-```
-adhd-study-app/
-├── src/              # Frontend React components
-│   ├── App.js        # Main app component
-│   ├── Dashboard.js  # Assignment dashboard
-│   ├── StudyPlan.js  # Study plan creator
-│   ├── Pomodoro.js   # Pomodoro timer
-│   └── ...
-├── public/           # Static assets
-├── server/           # Proxy server (optional)
-├── src/              # Backend source (if backend in root)
-│   ├── server.js     # Express server
-│   ├── routes/       # API routes
-│   └── ...
-└── prisma/           # Database schema
-```
+User plans study sessions using Pomodoro chunking.
 
-## Available Scripts
+Smart reminders and progress streaks keep engagement high.
 
-### Frontend
-- `npm start` - Start React development server
-- `npm run build` - Build for production
-- `npm test` - Run tests
+Attention checks help sustain focus with built-in breaks.
 
-### Backend
-- `npm start` - Start Express server
-- `npm run dev` - Start with nodemon (auto-reload)
-- `npm run db:generate` - Generate Prisma client
-- `npm run db:migrate` - Run database migrations
+# 🧠 Research Basis
 
-## Canvas LMS Integration
+The project is inspired by ADHD research on executive dysfunction, time blindness, and dopamine-driven motivation cycles.
+Studies show that 15–17% of college students report ADHD symptoms, and up to 25% of those using disability services have ADHD.
+By applying behavioral psychology principles — like positive reinforcement and chunked task structures — Let’s Lock In helps students sustain motivation and achieve consistency.
 
-The app supports importing assignments from Canvas LMS:
+# 💡 Future Plans
 
-1. Click "Import from Canvas" in the Study Plan section
-2. Enter your Canvas instance URL (e.g., `https://your-school.instructure.com`)
-3. Enter your Canvas access token
-4. Select courses and assignments to import
+Add mobile notifications and voice reminders
 
-## License
+Introduce AI-powered summarization for lecture notes
 
-MIT
+Integrate focus music and mood-based study modes
+
+Partner with ADHD researchers for personalized cognitive metrics
+
+🧑‍💻 Contributors
+
+Himanshu Kolla — UI desiginer & Research Designer
+Anushka Tiwari - Backend Architecture + Frontend additions 
+Vishnu Uppalapati - API implementation
+Chaitanya Nookala - Backend Face posture estimator 
+
+
+🪪 License
+
+This project is open-source under the MIT License.
